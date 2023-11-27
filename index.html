@@ -1,22 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
-
-    <h1>This is a test</h1>
-
-    <h3>Show a file-select field which allows only one file to be chosen:</h3>
-    <form action="/action_page.php">
-        <label for="myfile">Select a file:</label>
-        <input type="file" id="myfile" name="myfile"><br><br>
-        <input type="submit">
-    </form>
-
+   <form id="csvForm">
+      <input type="file" id="csvFile" accept=".csv" />
+      <br />
+      <input type="submit" value="Submit" />
+   </form>
+   <script src=index.js></script>
 </body>
 
 </html>
