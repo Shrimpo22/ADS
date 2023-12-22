@@ -16,8 +16,10 @@ csvForm.addEventListener("submit", function (e) {
     reader.readAsText(schedule_input);
     */
 
-    create_objects(rooms_input, true)
+    create_objects(rooms_input, false)
         .then(roomsObjects => {
+            const filteredObjectList = roomsObjects.filter(obj => 'Focus Group' in obj);
+            console.log(filteredObjectList);
             // Print or use the created objects
             //console.log("Rooms Objects:", roomsObjects);
         })
@@ -50,26 +52,28 @@ function create_objects(csvFile, debug) {
             if(debug === true)
                 console.log(headers)
             lines.slice(1).forEach((line, index) => {
-                const values = line.split(';');
+                const values = line.replace(/\r$/, '').split(';');
                 const debug_value = `${values.join(' | ')} (Line ${index + 2})`;
 
                 if(debug === true)
-                    console.log(debug_value)
+                  console.log(debug_value)
 
                 const obj = {};
                 let p = 0;
 
                 for ( const header of headers)
                 {
-
-                    obj[header] = values[p]
+                    if (values[p] !== '')
+                        obj[header] = values[p]
                     p++;
                 }
 
-                if(debug === true)
+                if(debug === true) {
                     console.log(obj)
-                    console.log(obj["Edifício"])
-
+                    if (obj["Arq 5"])
+                        console.log(`Line ${index + 2}`);
+                    console.log(obj["Arq 1"])
+                }
                 objects.push(obj);
             });
 
