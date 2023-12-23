@@ -18,24 +18,31 @@ csvForm.addEventListener("submit", function (e) {
 
     create_objects(rooms_input, false)
         .then(roomsObjects => {
-            const filteredObjectList = roomsObjects.filter(obj => 'Focus Group' in obj);
-            console.log(filteredObjectList);
-            // Print or use the created objects
-            //console.log("Rooms Objects:", roomsObjects);
+            create_objects(schedule_input, false)
+                .then(scheduleObjects => {
+                    // Assign rooms to classes based on criteria
+                    //const assignedClasses = assignRoomsToClasses(scheduleObjects, roomsObjects);
+                    if(1 === 0) {
+                        for (const subjectName in roomsObjects) {
+                            if (roomsObjects.hasOwnProperty(subjectName)) {
+                                const subjectInfo = roomsObjects[subjectName];
+                                console.log(subjectInfo['Capacidade Normal'])
+                            }
+                        }
+                    }
+                    //console.log(roomsObjects)
+                    //console.log(scheduleObjects)
+                    assignRoomsToClasses(roomsObjects,scheduleObjects)
+                    // Print or use the assigned classes
+                    //console.log("Assigned Classes:", assignedClasses);
+                })
+                .catch(error => {
+                    console.error("Error creating schedule objects:", error);
+                });
         })
         .catch(error => {
             console.error("Error creating rooms objects:", error);
         });
-
-    create_objects(schedule_input, false)
-        .then(scheduleObjects => {
-            // Print or use the created objects
-            //console.log("Schedule Objects:", scheduleObjects);
-        })
-        .catch(error => {
-            console.error("Error creating schedule objects:", error);
-        });
-
 });
 
 function create_objects(csvFile, debug) {
@@ -54,13 +61,10 @@ function create_objects(csvFile, debug) {
             lines.slice(1).forEach((line, index) => {
                 const values = line.replace(/\r$/, '').split(';');
                 const debug_value = `${values.join(' | ')} (Line ${index + 2})`;
-
                 if(debug === true)
                   console.log(debug_value)
-
                 const obj = {};
                 let p = 0;
-
                 for ( const header of headers)
                 {
                     if (values[p] !== '')
@@ -68,12 +72,6 @@ function create_objects(csvFile, debug) {
                     p++;
                 }
 
-                if(debug === true) {
-                    console.log(obj)
-                    if (obj["Arq 5"])
-                        console.log(`Line ${index + 2}`);
-                    console.log(obj["Arq 1"])
-                }
                 objects.push(obj);
             });
 
@@ -84,3 +82,25 @@ function create_objects(csvFile, debug) {
         reader.readAsText(csvFile);
     });
 }
+
+function assignRoomsToClasses(roomsObjects, scheduleObjects){
+
+    //criar um hashmap (com sala, hora alocada)  aqui no início para adicionar as salas que nao estao disponivies. Após alocarmos uma sala, adicionamos a este map, e sempre que quisermos alocar uma sala vamos verificar neste map se a sala àquela hora nao se encontra no map
+    // ter uma var tolerancia
+    for(const so of scheduleObjects){
+        const requiredCapacity = so['Inscritos no turno'];
+        const requestedClass = so['Características da sala pedida para a aula']
+        //console.log(requestedClass)
+
+        const matchingRooms = roomsObjects
+            .filter(ro => ro['Capacidade Normal'] >= requiredCapacity && ro[requestedClass] === 'X')
+            .map(ro => ro['Nome sala']);
+
+
+        console.log(`Para a Unidade de execução ${so['Unidade de execução']} no dia ${so['Dia']} que precisa de ${so['Inscritos no turno']} lugares temos as seguinte salas disponíveis`);
+        console.log('Salas com os requerimentos solicitados:', matchingRooms);
+    }
+
+
+}
+
