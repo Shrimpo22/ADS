@@ -17,10 +17,10 @@ const roomsCSV = document.getElementById("roomsCSV");
 const scheduleCSV = document.getElementById("scheduleCSV");
 
 /**
- * Object to store calendar data.
+ * Object to store allocatedRooms data.
  * @type {Object}
  */
-const calendar = {}
+const allocatedRooms = {}
 
 /**
  * Event listener for form submission to handle CSV file processing.
@@ -76,8 +76,8 @@ csvForm.addEventListener("submit", function (e) {
             printObjectsTable(roomsObjects, resultRoomsContainer)
             printObjectsTable(scheduleObjects, resultScheduleContainer)
 
-            assignRoomsToClasses(roomsObjects, scheduleObjects);
-            markAsUnavailable("Catacumbas", '02/12/2022', '12:00:00', '14:30:00', true)
+            assignRoomsToClasses(roomsObjects, scheduleObjects, false);
+            markAsUnavailable("Catacumbas", '02/12/2022', '12:00:00', '14:30:00', false)
         })
         .catch(error => {
             console.error("Error creating objects:", error);
@@ -147,6 +147,49 @@ function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
 
     //criar um hashmap (com sala, hora alocada)  aqui no início para adicionar as salas que nao estao disponivies. Após alocarmos uma sala, adicionamos a este map, e sempre que quisermos alocar uma sala vamos verificar neste map se a sala àquela hora nao se encontra no map
     // ter uma var tolerancia
+
+    const objectsByDateMap = new Map();
+
+    scheduleObjects.sort(compareObjectsByDateAndTime);
+    console.log("Sorted")
+    console.log(scheduleObjects)
+
+    scheduleObjects.forEach((obj) => {
+        // Extract the date from the current object
+        const date = obj['Dia'];
+        console.log("Date: "+ date)
+        // Check if the date is already a key in the map
+        if (objectsByDateMap.has(date)) {
+            // If the date exists, add the current object to the existing array
+            objectsByDateMap.get(date).push(obj);
+        } else {
+            // If the date doesn't exist, create a new array with the current object
+            objectsByDateMap.set(date, [obj]);
+        }
+    });
+
+    console.log(objectsByDateMap)
+
+    objectsByDateMap.forEach((objects, date) => {
+        console.log(`Date: ${date}`);
+        console.log(objects);
+        console.log("-------------------");
+
+
+        //cenas com filtros falta implementar algoritmo, tás a pensar em divide and conquer seu lerdo amo te beijo no traseiro
+        const startHour = "13:00:00"
+        const filtered = objects.filter(obj => compareTimes(obj['Início'], startHour) <= 0)
+        console.log("Filtered")
+        console.log(filtered)
+        console.log("-------------------")
+    });
+
+    isRoomAvailable("AA3.23","02/12/2022", "13:00:00", "14:30:00", false)
+
+    //scheduleObjects.sort((a,b) => a[date])
+    //console.log()
+
+
     for (const so of scheduleObjects) {
         const requiredCapacity = so['Inscritos no turno'];
         const requestedClass = so['Características da sala pedida para a aula']
@@ -176,6 +219,40 @@ function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
             console.log(`Para a Unidade de execução ${so['Unidade de execução']} no dia ${so['Dia']} que precisa de ${so['Inscritos no turno']} lugares temos as seguinte salas disponíveis`);
             console.log('Salas com os requerimentos solicitados:', matchingRooms);
         }
+    }
+
+
+    /**
+     * Compares two objects based on their date and time properties.
+     *
+     * @param {Object} a - The first object to compare.
+     * @param {Object} b - The second object to compare.
+     * @param {boolean} debug - Flag to enable debugging output.
+     * @returns {number} Returns a negative value if 'a' comes before 'b', a positive value if 'a' comes after 'b', and 0 if they are equal.
+     *
+     * @example
+     * const result = compareObjectsByDateAndTime(object1, object2);
+     * // result will be a number indicating the comparison result.
+     */
+    function compareObjectsByDateAndTime(a, b, debug) {
+        // Compare dates
+        const dateComparison = new Date(a["Dia"]) - new Date(b["Dia"]);
+        debug && console.log("Dia: a-" + a["Dia"] + " b-" + b["Dia"] + " Comparison=>" + dateComparison)
+
+        // If dates are equal, compare start times
+        if (dateComparison === 0) {
+            debug && console.log(a["Início"])
+            const startTimeA = new Date(`2000-01-01T${a["Início"]}`);
+            debug && console.log(startTimeA)
+            const startTimeB = new Date(`2000-01-01T${b["Início"]}`);
+            debug && console.log(startTimeB)
+            debug && console.log("Hour: a-" + startTimeA + " b-" + startTimeB + " Comparison=>" + (startTimeA - startTimeB))
+
+            return startTimeA - startTimeB;
+
+        }
+
+        return dateComparison;
     }
 }
 
@@ -248,56 +325,93 @@ function printObjectsTable(objObjects, resultContainer) {
  * @param {string} endTime - The end time of the unavailability period.
  * @param {boolean} debug - Flag to enable debugging output.
  */
-function markAsUnavailable(roomName, date, startTime, endTime, debug){
+function markAsUnavailable(roomName, date, startTime, endTime, debug) {
 
-        const [day, month, year] = date.split('/');
-        let hourStart = startTime.split(':').slice(0, 2).join(':');
+    const [day, month, year] = date.split('/');
+    let hourStart = startTime.split(':').slice(0, 2).join(':');
 
-        debug && console.log("HourStart: " + hourStart);
+    debug && console.log("HourStart: " + hourStart);
 
-        // Check if the year exists in the calendar, if not, add it
-        calendar[year] = calendar[year] || {};
+    // Check if the year exists in the allocatedRooms, if not, add it
+    allocatedRooms[year] = allocatedRooms[year] || {};
 
-        // Check if the month exists in the year, if not, add it
-        calendar[year][month] = calendar[year][month] || {};
+    // Check if the month exists in the year, if not, add it
+    allocatedRooms[year][month] = allocatedRooms[year][month] || {};
 
-        // Check if the day exists in the month, if not, add it
-        calendar[year][month][day] = calendar[year][month][day] || {};
+    // Check if the day exists in the month, if not, add it
+    allocatedRooms[year][month][day] = allocatedRooms[year][month][day] || {};
 
-        let currHour = hourStart
-        while(compareTimes(currHour, endTime)){
-            debug && console.log("New Hour: "+currHour);
+    let currHour = hourStart
+    while (compareTimes(currHour, endTime, false)) {
+        debug && console.log("New Hour: " + currHour);
 
-            calendar[year][month][day][currHour] = calendar[year][month][day][currHour] || [];
+        allocatedRooms[year][month][day][currHour] = allocatedRooms[year][month][day][currHour] || [];
 
-            calendar[year][month][day][currHour].push(roomName);
+        allocatedRooms[year][month][day][currHour].push(roomName);
 
-            const [hours, minutes] = currHour.split(':').map(Number);
-            const newMinutes = (minutes + 30) % 60;
-            const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
+        const [hours, minutes] = currHour.split(':').map(Number);
+        const newMinutes = (minutes + 30) % 60;
+        const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
 
-            debug && console.log("Minutes: "+minutes+" => " +newMinutes+ " Hours: "+hours+" => "+newHours)
-            currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+        debug && console.log("Minutes: " + minutes + " => " + newMinutes + " Hours: " + hours + " => " + newHours)
+        currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
 
-        }
-        debug && console.log(calendar['2022']['12']['02'])
-        function compareTimes(time1, time2) {
-            debug && console.log("Compare "+time1+" "+ time2)
-            // Convert times to minutes since midnight
-            const [hours1, minutes1] = time1.split(':').map(Number);
-            const [hours2, minutes2] = time2.split(':').map(Number);
-
-            const totalMinutes1 = hours1 * 60 + minutes1;
-            const totalMinutes2 = hours2 * 60 + minutes2;
-
-            // Compare the numeric values
-            if (totalMinutes1 < totalMinutes2) {
-                return -1;
-            } else if (totalMinutes1 > totalMinutes2) {
-                return 1;
-            } else {
-                return 0; // Times are equal
-            }
-        }
+    }
+    debug && console.log(allocatedRooms['2022']['12']['02'])
 }
 
+function isRoomAvailable(roomName, date, startTime, endTime, debug){
+    const [day, month, year] = date.split('/');
+    let currHour = startTime.split(':').slice(0, 2).join(':');
+    debug && console.log("Day: "+day+" Month: "+month+" Year: "+year)
+    while (compareTimes(currHour, endTime)){
+        debug && console.log("CurrHour: "+currHour)
+        if (allocatedRooms[year] && allocatedRooms[year][month] && allocatedRooms[year][month][day] && allocatedRooms[year][month][day][currHour]) {
+            debug && console.log(allocatedRooms[year][month][day][currHour])
+            debug && console.log("Room Name: "+roomName)
+
+            if (allocatedRooms[year][month][day][currHour].includes(roomName)) {
+                return true;
+            }
+        }
+        const [hours, minutes] = currHour.split(':').map(Number);
+        const newMinutes = (minutes + 30) % 60;
+        const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
+
+        debug && console.log("Minutes: " + minutes + " => " + newMinutes + " Hours: " + hours + " => " + newHours)
+        currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+
+    }
+
+}
+
+/**
+ * Compare two time strings and return the result.
+ *
+ * @param {string} time1 - The first time string in the format 'HH:mm'.
+ * @param {string} time2 - The second time string in the format 'HH:mm'.
+ * @param {boolean} [debug=false] - If true, log debug information to the console.
+ * @returns {number} Returns -1 if time1 is earlier than time2, 1 if time1 is later than time2,
+ *                   and 0 if both times are equal.
+ * @example
+ * const result = compareTimes('12:30', '14:45', true);
+ * console.log(result); // Output: -1
+ */
+function compareTimes(time1, time2, debug) {
+    debug && console.log("Compare " + time1 + " " + time2)
+    // Convert times to minutes since midnight
+    const [hours1, minutes1] = time1.split(':').map(Number);
+    const [hours2, minutes2] = time2.split(':').map(Number);
+
+    const totalMinutes1 = hours1 * 60 + minutes1;
+    const totalMinutes2 = hours2 * 60 + minutes2;
+
+    // Compare the numeric values
+    if (totalMinutes1 < totalMinutes2) {
+        return -1;
+    } else if (totalMinutes1 > totalMinutes2) {
+        return 1;
+    } else {
+        return 0; // Times are equal
+    }
+}
