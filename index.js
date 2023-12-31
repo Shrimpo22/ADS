@@ -29,15 +29,7 @@ csvForm.addEventListener("submit", function (e) {
     e.preventDefault();
     const rooms_input = roomsCSV.files[0];
     const schedule_input = scheduleCSV.files[0];
-    /*
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const text = e.target.result;
-        document.write(text);
-    };
-    reader.readAsText(rooms_input);
-    reader.readAsText(schedule_input);
-    */
+
     let roomsPromiseResolved = false
     let schedulePromiseResolved = false
 
@@ -53,6 +45,9 @@ csvForm.addEventListener("submit", function (e) {
     const schedulePromise = create_objects(schedule_input, false)
         .then(scheduleObjects => {
             schedulePromiseResolved = true;
+
+            findConflictingClasses(scheduleObjects,false)
+
             return scheduleObjects;
         })
         .catch(error => {
@@ -70,14 +65,33 @@ csvForm.addEventListener("submit", function (e) {
                     }
                 }
             }
+
             const resultRoomsContainer = document.getElementById('result-rooms-container');
             const resultScheduleContainer = document.getElementById('result-schedule-container');
+            const resultLPContainer = document.getElementById('test-container');
 
             printObjectsTable(roomsObjects, resultRoomsContainer)
             printObjectsTable(scheduleObjects, resultScheduleContainer)
 
-            assignRoomsToClasses(roomsObjects, scheduleObjects, false);
-            markAsUnavailable("Catacumbas", '02/12/2022', '12:00:00', '14:30:00', false)
+            const conflictClasses = findConflictingClasses(scheduleObjects,false)
+            let wasteVar = 0
+            let valueVar= 0
+            const matchings = []
+            conflictClasses.forEach(chain =>{
+                const lpResult = solveWithLP(roomsObjects, chain , false)
+                if(lpResult !== -1) {
+                    wasteVar += lpResult.waste
+                    valueVar += lpResult.value
+                    lpResult.variableValues.forEach(match => matchings.push(match))
+                }
+            } )
+
+            console.log(matchings)
+            matchings.sort(compareObjectsByDateAndTime)
+            printObjectsTable(matchings, resultLPContainer)
+
+            // assignRoomsToClasses(roomsObjects, scheduleObjects, false);
+            // markAsUnavailable("Catacumbas", '02/12/2022', '12:00:00', '14:30:00', false)
         })
         .catch(error => {
             console.error("Error creating objects:", error);
@@ -134,6 +148,75 @@ function create_objects(csvFile, debug) {
     });
 }
 
+/**
+ * Finds conflicting classes based on time overlaps.
+ *
+ * @param {Array} classes - An array of class objects.
+ * @param {boolean} debug - A flag indicating whether to print debug information.
+ * @returns {Array} An array of arrays, where each inner array represents a chain of conflicting classes.
+ */
+function findConflictingClasses(classes, debug) {
+    const conflictingClasses = [];
+    const classesDone = [];
+
+    for (let i = 0; i < classes.length; i++) {
+        const conflictChain = [];
+        if (!classesDone.includes(classes[i])) {
+            const classA = classes[i];
+            conflictChain.push(classA);
+            for (let j = i + 1; j < classes.length; j++) {
+                const classB = classes[j];
+                // Check for time overlap
+                if (isTimeOverlap(classA, classB)) {
+                    debug && console.log("Class A: ", classA, " Class B: ", classB);
+                    conflictChain.push(classB);
+                }
+            }
+
+            classesDone.push(classA);
+
+            for (let k = 0; k < conflictChain.length; k++) {
+                const classK = conflictChain[k];
+                debug && console.log("Class K: ", classK, " includes ", classesDone.includes(classK));
+                if (!classesDone.includes(classK)) {
+                    for (let j = i + 1; j < classes.length; j++) {
+                        const classB = classes[j];
+                        debug && console.log("Class B: ", classB);
+                        if (!conflictChain.includes(classB)) {
+                            // Check for time overlap
+                            if (isTimeOverlap(classK, classB)) {
+                                debug && console.log("Class A chain: ", classK, " Class B chain: ", classB);
+                                conflictChain.push(classB);
+                            }
+                        }
+                    }
+                    classesDone.push(classK);
+                }
+            }
+
+            debug && console.log("Conflict Chain: ", conflictChain);
+            conflictingClasses.push(conflictChain);
+        }
+    }
+
+    return conflictingClasses;
+
+    /**
+     * Checks if two classes have a time overlap.
+     *
+     * @param {Object} classA - The first class object with 'Início' (start time) and 'Fim' (end time) properties.
+     * @param {Object} classB - The second class object with 'Início' (start time) and 'Fim' (end time) properties.
+     * @returns {boolean} Returns true if there is a time overlap between the two classes; otherwise, returns false.
+     */
+    function isTimeOverlap(classA, classB) {
+        const startA = new Date(`2023-01-01 ${classA['Início']}`);
+        const endA = new Date(`2023-01-01 ${classA['Fim']}`);
+        const startB = new Date(`2023-01-01 ${classB['Início']}`);
+        const endB = new Date(`2023-01-01 ${classB['Fim']}`);
+
+        return (startA < endB && endA > startB) || (startB < endA && endB > startA);
+    }
+}
 
 /**
  * Assigns rooms to classes based on specified criteria.
@@ -142,6 +225,9 @@ function create_objects(csvFile, debug) {
  * @param {Array<Object>} scheduleObjects - Array of schedule objects.
  * @param {boolean} debug - Flag to enable debugging output.
  */
+/*
+* WIP -Work In Progress
+* */
 function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
     const resultContainer = document.getElementById('result-match-container');
 
@@ -153,6 +239,9 @@ function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
     scheduleObjects.sort(compareObjectsByDateAndTime);
     console.log("Sorted")
     console.log(scheduleObjects)
+
+    console.log("Rooomssssssssssss")
+    console.log(roomsObjects)
 
     scheduleObjects.forEach((obj) => {
         // Extract the date from the current object
@@ -168,21 +257,21 @@ function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
         }
     });
 
-    console.log(objectsByDateMap)
-
-    objectsByDateMap.forEach((objects, date) => {
-        console.log(`Date: ${date}`);
-        console.log(objects);
-        console.log("-------------------");
-
-
-        //cenas com filtros falta implementar algoritmo, tás a pensar em divide and conquer seu lerdo amo te beijo no traseiro
-        const startHour = "13:00:00"
-        const filtered = objects.filter(obj => compareTimes(obj['Início'], startHour) <= 0)
-        console.log("Filtered")
-        console.log(filtered)
-        console.log("-------------------")
-    });
+    // console.log(objectsByDateMap)
+    //
+    // objectsByDateMap.forEach((objects, date) => {
+    //     console.log(`Date: ${date}`);
+    //     console.log(objects);
+    //     console.log("-------------------");
+    //
+    //
+    //     //cenas com filtros falta implementar algoritmo, tás a pensar em divide and conquer seu lerdo amo te beijo no traseiro
+    //     const startHour = "13:00:00"
+    //     const filtered = objects.filter(obj => compareTimes(obj['Início'], startHour) <= 0)
+    //     console.log("Filtered")
+    //     console.log(filtered)
+    //     console.log("-------------------")
+    // });
 
     isRoomAvailable("AA3.23","02/12/2022", "13:00:00", "14:30:00", false)
 
@@ -219,40 +308,6 @@ function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
             console.log(`Para a Unidade de execução ${so['Unidade de execução']} no dia ${so['Dia']} que precisa de ${so['Inscritos no turno']} lugares temos as seguinte salas disponíveis`);
             console.log('Salas com os requerimentos solicitados:', matchingRooms);
         }
-    }
-
-
-    /**
-     * Compares two objects based on their date and time properties.
-     *
-     * @param {Object} a - The first object to compare.
-     * @param {Object} b - The second object to compare.
-     * @param {boolean} debug - Flag to enable debugging output.
-     * @returns {number} Returns a negative value if 'a' comes before 'b', a positive value if 'a' comes after 'b', and 0 if they are equal.
-     *
-     * @example
-     * const result = compareObjectsByDateAndTime(object1, object2);
-     * // result will be a number indicating the comparison result.
-     */
-    function compareObjectsByDateAndTime(a, b, debug) {
-        // Compare dates
-        const dateComparison = new Date(a["Dia"]) - new Date(b["Dia"]);
-        debug && console.log("Dia: a-" + a["Dia"] + " b-" + b["Dia"] + " Comparison=>" + dateComparison)
-
-        // If dates are equal, compare start times
-        if (dateComparison === 0) {
-            debug && console.log(a["Início"])
-            const startTimeA = new Date(`2000-01-01T${a["Início"]}`);
-            debug && console.log(startTimeA)
-            const startTimeB = new Date(`2000-01-01T${b["Início"]}`);
-            debug && console.log(startTimeB)
-            debug && console.log("Hour: a-" + startTimeA + " b-" + startTimeB + " Comparison=>" + (startTimeA - startTimeB))
-
-            return startTimeA - startTimeB;
-
-        }
-
-        return dateComparison;
     }
 }
 
@@ -360,6 +415,16 @@ function markAsUnavailable(roomName, date, startTime, endTime, debug) {
     debug && console.log(allocatedRooms['2022']['12']['02'])
 }
 
+/**
+ * Checks if a room is available for a specified time slot on a given date.
+ *
+ * @param {string} roomName - The name of the room to check for availability.
+ * @param {string} date - The date in the format 'DD/MM/YYYY'.
+ * @param {string} startTime - The start time in the format 'HH:mm'.
+ * @param {string} endTime - The end time in the format 'HH:mm'.
+ * @param {boolean} debug - A flag indicating whether to print debug information.
+ * @returns {boolean} Returns true if the room is available; otherwise, returns false.
+ */
 function isRoomAvailable(roomName, date, startTime, endTime, debug){
     const [day, month, year] = date.split('/');
     let currHour = startTime.split(':').slice(0, 2).join(':');
@@ -413,5 +478,127 @@ function compareTimes(time1, time2, debug) {
         return 1;
     } else {
         return 0; // Times are equal
+    }
+}
+
+/**
+ * Compares two objects based on their date and time properties.
+ *
+ * @param {Object} a - The first object to compare.
+ * @param {Object} b - The second object to compare.
+ * @param {boolean} debug - Flag to enable debugging output.
+ * @returns {number} Returns a negative value if 'a' comes before 'b', a positive value if 'a' comes after 'b', and 0 if they are equal.
+ *
+ * @example
+ * const result = compareObjectsByDateAndTime(object1, object2);
+ * // result will be a number indicating the comparison result.
+ */
+function compareObjectsByDateAndTime(a, b, debug) {
+    // Compare dates
+    const dateComparison = new Date(a["Dia"]) - new Date(b["Dia"]);
+    debug && console.log("Dia: a-" + a["Dia"] + " b-" + b["Dia"] + " Comparison=>" + dateComparison)
+
+    // If dates are equal, compare start times
+    if (dateComparison === 0) {
+        debug && console.log(a["Início"])
+        const startTimeA = new Date(`2000-01-01T${a["Início"]}`);
+        debug && console.log(startTimeA)
+        const startTimeB = new Date(`2000-01-01T${b["Início"]}`);
+        debug && console.log(startTimeB)
+        debug && console.log("Hour: a-" + startTimeA + " b-" + startTimeB + " Comparison=>" + (startTimeA - startTimeB))
+
+        return startTimeA - startTimeB;
+
+    }
+
+    return dateComparison;
+}
+
+/**
+ * Solves a linear programming problem for room allocation.
+ *
+ * @param {Array} rooms - An array of room objects.
+ * @param {Array} classes - An array of class objects.
+ * @param {boolean} debug - A flag indicating whether to print debug information.
+ * @returns {Object} An object containing the result of the LP problem.
+ */
+function solveWithLP(rooms, classes, debug){
+    // LP Problem Formulation
+    const model = {
+        optimize: {
+            waste: "min",
+            value: "max"
+        },
+        constraints: {},
+        variables: {},
+    };
+
+// Create variables for room allocation
+    rooms.forEach((room, roomIndex) => {
+        classes.forEach((cls, classIndex) => {
+            if(cls['Inscritos no turno'] <= room['Capacidade Normal']) {
+                const variableName = `${room['Nome sala']}_${cls['Curso']}_${cls['Dia']}_${cls['Início']}_${cls['Fim']}`;
+                model.variables[variableName] = {
+                    [room['Nome sala']]: 1,
+                    [cls['Curso']]: 1,
+                    roomCapacity: room['Capacidade Normal'],
+                    classStudents: cls['Inscritos no turno'],
+                    waste: room['Capacidade Normal'] - cls['Inscritos no turno'],
+                    value: 100 - cls['Inscritos no turno'],
+                };
+            }
+        });
+    });
+
+    model.constraints['waste'] = { min: 0 };
+    model.constraints['value'] = { min: 0 };
+
+// Add constraints for each class to be assigned to exactly one room
+    rooms.forEach((room) => {
+        const constraint = {};
+        model.constraints[room['Nome sala']] = { min: 0, max: 1 };
+    });
+
+    classes.forEach((cls) => {
+        const constraint = {};
+        model.constraints[cls['Curso']] = { equal: 1 };
+    });
+
+// Solve the LP problem
+    const solution = solver.Solve(model);
+    if (debug) {
+        console.log("Model");
+        console.log(model);
+        console.log("Solution");
+        console.log(solution);
+    }
+
+    let sol = []
+
+    if(solution.vertices) {
+        sol = solution.vertices[0]
+        if(!solution.midpoint.feasible)
+            return -1
+    }else{
+        if(!solution.feasible)
+            return -1
+        sol = solution
+    }
+
+    const variableValues = [];
+    Object.keys(model.variables).forEach(variable => {
+        if (sol[variable] === 1)
+            variableValues.push(constructObject(variable));
+    });
+
+    return {
+        variableValues: variableValues,
+        waste: sol.waste,
+        value: sol.value
+    };
+
+    function constructObject(variable){
+        const temp = variable.split('_')
+        return {'Edifício': temp[0], 'Unidade de Execução': temp[1], 'Dia': temp[2], 'Início': temp[3], 'Fim': temp[4]}
     }
 }
