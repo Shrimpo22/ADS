@@ -46,8 +46,6 @@ csvForm.addEventListener("submit", function (e) {
         .then(scheduleObjects => {
             schedulePromiseResolved = true;
 
-            findConflictingClasses(scheduleObjects,false)
-
             return scheduleObjects;
         })
         .catch(error => {
@@ -68,7 +66,7 @@ csvForm.addEventListener("submit", function (e) {
 
             const resultRoomsContainer = document.getElementById('result-rooms-container');
             const resultScheduleContainer = document.getElementById('result-schedule-container');
-            const resultLPContainer = document.getElementById('test-container');
+            const resultLPContainer = document.getElementById('result-match-container');
 
             printObjectsTable(roomsObjects, resultRoomsContainer)
             printObjectsTable(scheduleObjects, resultScheduleContainer)
@@ -78,7 +76,7 @@ csvForm.addEventListener("submit", function (e) {
             let valueVar= 0
             const matchings = []
             conflictClasses.forEach(chain =>{
-                const lpResult = solveWithLP(roomsObjects, chain , false)
+                const lpResult = solveWithLP(roomsObjects, chain , true)
                 if(lpResult !== -1) {
                     wasteVar += lpResult.waste
                     valueVar += lpResult.value
@@ -89,6 +87,7 @@ csvForm.addEventListener("submit", function (e) {
             console.log(matchings)
             matchings.sort(compareObjectsByDateAndTime)
             printObjectsTable(matchings, resultLPContainer)
+            displayCalendar(matchings)
 
             // assignRoomsToClasses(roomsObjects, scheduleObjects, false);
             // markAsUnavailable("Catacumbas", '02/12/2022', '12:00:00', '14:30:00', false)
@@ -101,6 +100,49 @@ csvForm.addEventListener("submit", function (e) {
     //Se eventualmente quisermos fazer coisas enquanto as promisses não estiverem resolved
     //}
 });
+
+function displayCalendar(events){
+
+    var convertedEvents = events.map(function(event) {
+        var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
+        var endDateTime = moment(event.Dia + ' ' + event.Fim, 'DD/MM/YYYY HH:mm:ss');
+        return {
+            title: event["Unidade de Execução"],
+            subtitle: event.Edifício,
+            start: startDateTime.format(),
+            end: endDateTime.format()
+
+        };
+    });
+
+    $('#calendar').fullCalendar({
+        header: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'month,agendaWeek,agendaDay,listWeek,year'
+        },
+        defaultView: 'month', // Set the default view to month
+        events: convertedEvents, // Pass your converted events here
+        locale: 'pt', // Set the locale to Portuguese
+        timeFormat: 'HH:mm',
+        buttonText: {
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            day: 'Dia',
+            list: 'Lista',
+            year: 'Ano' // Added translation for 'year'
+        },
+        eventRender: function (event, element) {
+            // Add subtitle to event element
+            if (event.subtitle) {
+                element.append('<div class="fc-subtitle">' + event.subtitle + '</div>');
+            }
+        }
+        // Additional options can be added here
+    });
+
+}
 
 /**
  * Reads a CSV file and creates objects based on its content.
