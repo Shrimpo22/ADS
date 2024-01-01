@@ -71,26 +71,43 @@ csvForm.addEventListener("submit", function (e) {
             printObjectsTable(roomsObjects, resultRoomsContainer)
             printObjectsTable(scheduleObjects, resultScheduleContainer)
 
-            const conflictClasses = findConflictingClasses(scheduleObjects,false)
-            let wasteVar = 0
-            let valueVar= 0
-            const matchings = []
-            conflictClasses.forEach(chain =>{
-                const lpResult = solveWithLP(roomsObjects, chain , true)
-                if(lpResult !== -1) {
-                    wasteVar += lpResult.waste
-                    valueVar += lpResult.value
-                    lpResult.variableValues.forEach(match => matchings.push(match))
+            const objectsByDateMap = new Map();
+
+            scheduleObjects.sort(compareObjectsByDateAndTime);
+            scheduleObjects.forEach((obj) => {
+                // Extract the date from the current object
+                const date = obj['Dia'];
+                // Check if the date is already a key in the map
+                if (objectsByDateMap.has(date)) {
+                    // If the date exists, add the current object to the existing array
+                    objectsByDateMap.get(date).push(obj);
+                } else {
+                    // If the date doesn't exist, create a new array with the current object
+                    objectsByDateMap.set(date, [obj]);
                 }
-            } )
+            });
 
-            console.log(matchings)
-            matchings.sort(compareObjectsByDateAndTime)
-            printObjectsTable(matchings, resultLPContainer)
-            displayCalendar(matchings)
+            console.log(objectsByDateMap)
+            const matches =[]
+            for (const ucsForTheDate of objectsByDateMap) {
+                const conflictClasses = findConflictingClasses(ucsForTheDate[1],false)
+                let wasteVar = 0
+                let valueVar= 0
+                conflictClasses.forEach(chain =>{
+                    const lpResult = solveWithLP(roomsObjects, chain , false)
+                    if(lpResult !== -1) {
+                        wasteVar += lpResult.waste
+                        valueVar += lpResult.value
+                        lpResult.variableValues.forEach(match => matches.push(match))
 
-            // assignRoomsToClasses(roomsObjects, scheduleObjects, false);
-            // markAsUnavailable("Catacumbas", '02/12/2022', '12:00:00', '14:30:00', false)
+                    }
+                } )
+            }
+
+            printObjectsTable(matches, resultLPContainer)
+            displayCalendar(matches)
+
+
         })
         .catch(error => {
             console.error("Error creating objects:", error);
@@ -578,28 +595,39 @@ function solveWithLP(rooms, classes, debug){
 // Create variables for room allocation
     rooms.forEach((room, roomIndex) => {
         classes.forEach((cls, classIndex) => {
-            if(cls['Inscritos no turno'] <= room['Capacidade Normal']) {
+
+            if (cls['Inscritos no turno'] <= room['Capacidade Normal']) {
                 const variableName = `${room['Nome sala']}_${cls['Curso']}_${cls['Dia']}_${cls['Início']}_${cls['Fim']}`;
                 model.variables[variableName] = {
-                    [room['Nome sala']]: 1,
                     [cls['Curso']]: 1,
                     roomCapacity: room['Capacidade Normal'],
                     classStudents: cls['Inscritos no turno'],
                     waste: room['Capacidade Normal'] - cls['Inscritos no turno'],
                     value: 100 - cls['Inscritos no turno'],
                 };
+
+                let currHour = cls['Início'].split(':').slice(0, 2).join(':')
+                const endTime = cls['Fim']
+                while (compareTimes(currHour, endTime, false)) {
+                    const [hours, minutes] = currHour.split(':').map(Number);
+                    const newMinutes = (minutes + 30) % 60;
+                    const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
+
+                    model.variables[variableName][`${room['Nome sala']}'_'${currHour}`] = 1;
+
+                    if (!model.constraints[`${room['Nome sala']}'_'${currHour}`]) {
+                        model.constraints[`${room['Nome sala']}'_'${currHour}`] = { min: 0, max: 1 };
+                    }
+                    currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+
+                }
+
             }
         });
     });
 
     model.constraints['waste'] = { min: 0 };
     model.constraints['value'] = { min: 0 };
-
-// Add constraints for each class to be assigned to exactly one room
-    rooms.forEach((room) => {
-        const constraint = {};
-        model.constraints[room['Nome sala']] = { min: 0, max: 1 };
-    });
 
     classes.forEach((cls) => {
         const constraint = {};
