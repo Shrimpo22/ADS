@@ -1,3 +1,5 @@
+window.addEventListener('load', loadConfigurations);
+
 /**
  * Represents the form and input elements for CSV files.
  * @type {HTMLFormElement}
@@ -22,48 +24,117 @@ const scheduleCSV = document.getElementById("scheduleCSV");
  */
 const allocatedRooms = {}
 
+let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
+
+let boolError = false;
+
+function saveConfigurations() {
+    const configurations = {
+        check1: document.getElementById('check1').checked,
+        check2: document.getElementById('check2').checked,
+        check3: document.getElementById('check3').checked,
+        timeFormat: document.getElementById('timeFormatSelector').value,
+        dayFormat: document.getElementById('dayFormatSelector').value,
+        menu1_menu1Selection: document.getElementById("menu1Selection").value,
+        menu1_menu12Selection: document.getElementById("menu12Selection").value,
+        menu1_menu13Selection: document.getElementById("menu13Selection").value,
+        menu1_menu14Selection: document.getElementById("menu14Selection").value,
+
+        menu2_menu2Selection: document.getElementById("menu2Selection").value,
+        menu2_menu22Selection: document.getElementById("menu22Selection").value,
+        menu2_menu23Selection: document.getElementById("menu23Selection").value,
+        menu2_menu24Selection: document.getElementById("menu24Selection").value,
+        menu2_menu25Selection: document.getElementById("menu25Selection").value,
+        menu2_menu26Selection: document.getElementById("menu26Selection").value,
+
+        separatorInput: document.getElementById('separatorInput').value,
+
+        // Add more configurations as needed
+    };
+
+    localStorage.setItem('formConfigurations', JSON.stringify(configurations));
+}
+
+function loadConfigurations() {
+    const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
+
+    if (configurations) {
+        document.getElementById('check1').checked = configurations.check1;
+        document.getElementById('check2').checked = configurations.check2;
+        document.getElementById('check3').checked = configurations.check3;
+        document.getElementById('timeFormatSelector').value = configurations.timeFormat;
+        document.getElementById('dayFormatSelector').value = configurations.dayFormat;
+        document.getElementById('separatorInput').value = configurations.separatorInput
+        // Set more configurations as needed
+    }
+}
+
 /**
  * Event listener for form submission to handle CSV file processing.
  */
 csvForm.addEventListener("submit", function (e) {
     e.preventDefault();
+    var roomCapacityCol = document.getElementById("menu1Selection").value;
+    var roomNameCol = document.getElementById("menu12Selection").value;
+    var roomCharacFirstCol = document.getElementById("menu13Selection").value;
+    var roomCharacLastCol = document.getElementById("menu14Selection").value;
+
+    var ucBeginningTimeCol = document.getElementById("menu2Selection").value;
+    var ucEndTimeCol = document.getElementById("menu22Selection").value;
+    var ucDateCol = document.getElementById("menu23Selection").value;
+    var ucStudentsEnrolledCol = document.getElementById("menu24Selection").value;
+    var ucCharacNeededCol = document.getElementById("menu25Selection").value;
+    var ucNameCol = document.getElementById("menu26Selection").value;
+
+    var separatorInput = document.getElementById('separatorInput').value;
+
+// Retrieve values from checkboxes
+    var check1ValueCol = document.getElementById("check1").checked;
+    var check2ValueCol = document.getElementById("check2").checked;
+    var check3ValueCol = document.getElementById("check3").checked;
+
+    var timeFormat = document.getElementById("timeFormatSelector").value;
+    var dayFormat = document.getElementById("dayFormatSelector").value;
+
+    if (separatorInput === '') {
+        alert("Error: A separator hasn't been given. Please enter one");
+        return
+    }
+    if (
+        [roomCapacityCol, roomNameCol, roomCharacFirstCol, roomCharacLastCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol].includes("")
+    ) {
+        // Display error message
+        alert("Error: One or more selections are blank. Please choose an option.");
+        // Do not proceed with form submission
+        return;
+    }
+
+    alert("Form submitted successfully!");
+
+    saveConfigurations()
+
+    const roomVariablesMap = {};
+    roomVariablesMap[document.getElementById("menu1Selection").value] = "Capacidade Normal";
+    roomVariablesMap[document.getElementById("menu12Selection").value] = "Nome sala";
+    //roomVariablesMap[document.getElementById("menu13Selection").value] = "Characteristics First Column";
+    //roomVariablesMap[document.getElementById("menu14Selection").value] = "Characteristics Last Column";
+
+// HashMap for ucs variables
+    const ucVariablesMap = {};
+    ucVariablesMap[document.getElementById("menu2Selection").value] = "Início";
+    ucVariablesMap[document.getElementById("menu22Selection").value] = "Fim";
+    ucVariablesMap[document.getElementById("menu23Selection").value] = "Dia";
+    ucVariablesMap[document.getElementById("menu24Selection").value] = "Inscritos no turno";
+    ucVariablesMap[document.getElementById("menu25Selection").value] = "Características da sala pedida para a aula";
+    ucVariablesMap[document.getElementById("menu26Selection").value] = "Unidade de execução";
+
     const rooms_input = roomsCSV.files[0];
     const schedule_input = scheduleCSV.files[0];
 
-    let roomsPromiseResolved = false
-    let schedulePromiseResolved = false
+    toggleLoading()
 
-    const roomsPromise = create_objects(rooms_input, false)
-        .then(roomsObjects => {
-            roomsPromiseResolved = true;
-            return roomsObjects;
-        })
-        .catch(error => {
-            console.error("Error creating rooms objects:", error);
-        });
-
-    const schedulePromise = create_objects(schedule_input, false)
-        .then(scheduleObjects => {
-            schedulePromiseResolved = true;
-
-            return scheduleObjects;
-        })
-        .catch(error => {
-            console.error("Error creating schedule objects:", error);
-        });
-
-    Promise.all([roomsPromise, schedulePromise])
+    Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
-            // Both create_objects calls completed
-            if (1 === 0) {
-                for (const subjectName in roomsObjects) {
-                    if (roomsObjects.hasOwnProperty(subjectName)) {
-                        const subjectInfo = roomsObjects[subjectName];
-                        console.log(subjectInfo['Capacidade Normal']);
-                    }
-                }
-            }
-
             const resultRoomsContainer = document.getElementById('result-rooms-container');
             const resultScheduleContainer = document.getElementById('result-schedule-container');
             const resultLPContainer = document.getElementById('result-match-container');
@@ -87,45 +158,91 @@ csvForm.addEventListener("submit", function (e) {
                 }
             });
 
-            console.log(objectsByDateMap)
             const matches =[]
-            for (const ucsForTheDate of objectsByDateMap) {
-                const conflictClasses = findConflictingClasses(ucsForTheDate[1],false)
-                let wasteVar = 0
-                let valueVar= 0
-                conflictClasses.forEach(chain =>{
-                    const lpResult = solveWithLP(roomsObjects, chain , false)
-                    if(lpResult !== -1) {
-                        wasteVar += lpResult.waste
-                        valueVar += lpResult.value
-                        lpResult.variableValues.forEach(match => matches.push(match))
+            const workers = [];
+            let workersCount = 0;
+            const results = [];
 
-                    }
-                } )
-            }
 
-            printObjectsTable(matches, resultLPContainer)
-            displayCalendar(matches)
+            // objectsByDateMap.forEach((ucsForTheDate, index) => {
+            //     console.log("AAAAAAAAAAA", ucsForTheDate)
+            //     const conflictClasses = findConflictingClasses(ucsForTheDate,false)
+            //     console.log(conflictClasses)
+            //     let wasteVar = 0
+            //     let valueVar= 0
+            //
+            //
+            //
+            //     conflictClasses.forEach(chain =>{
+            //         console.log(chain)
+            //
+            //         const worker = new Worker('lpSolverWorker.js');
+            //         workersCount++;
+            //         console.log("+1", workersCount)
+            //
+            //         worker.onmessage = function (e) {
+            //             workersCount--;
+            //             console.log("-1", workersCount)
+            //             const lpResult = e.data;
+            //             if(lpResult === -1)
+            //                 console.log("ASDASDASDASDASDCASD")
+            //             if (lpResult !== -1) {
+            //                 // Process the result
+            //                 wasteVar += lpResult.waste;
+            //                 valueVar += lpResult.value;
+            //                 lpResult.variableValues.forEach((match) => matches.push(match));
+            //             }
+            //
+            //             // Store the result and check if all workers have finished
+            //             if (workersCount === 0) {
+            //                 console.log("ACABOU")
+            //                 isLoading = 0;
+            //                 console.log("Matches", matches)
+            //                 toggleLoading();
+            //                 printObjectsTable(matches, resultLPContainer)
+            //                 displayCalendar(matches)
+            //             }
+            //         };
+            //
+            //         // Store the worker reference
+            //         workers.push(worker);
+            //
+            //         // Send data to the worker
+            //         worker.postMessage({ rooms: roomsObjects, classes: chain});
+            //     } )
+            // })
 
+            greedyAlg(roomsObjects, objectsByDateMap)
+            isLoading=0
+            toggleLoading()
 
         })
         .catch(error => {
-            console.error("Error creating objects:", error);
+            alert("Error reading "+error)
+            isLoading=0
+            toggleLoading()
         });
 
-    //while (!(roomsPromiseResolved && schedulePromiseResolved)) {
-    //Se eventualmente quisermos fazer coisas enquanto as promisses não estiverem resolved
-    //}
 });
 
 function displayCalendar(events){
 
     var convertedEvents = events.map(function(event) {
+        console.log(event)
+        console.log("SO BADI 1", event["Unidade de execução"])
+        console.log("SO BADI 2", event.Início)
+        console.log("SO BADI 3", event.Fim)
+
         var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
         var endDateTime = moment(event.Dia + ' ' + event.Fim, 'DD/MM/YYYY HH:mm:ss');
+
+        let subTitle = "No Room Allocated!"
+        if(event["Sala da aula"])
+            subTitle = event["Sala da aula"]
+
         return {
-            title: event["Unidade de Execução"],
-            subtitle: event.Edifício,
+            title: event["Unidade de execução"],
+            subtitle: subTitle,
             start: startDateTime.format(),
             end: endDateTime.format()
 
@@ -168,7 +285,7 @@ function displayCalendar(events){
  * @param {boolean} debug - Flag to enable debugging output.
  * @returns {Promise<Array<Object>>} A promise that resolves with an array of objects.
  */
-function create_objects(csvFile, debug) {
+function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, timeCols, dateCols, debug) {
     const reader = new FileReader();
     const objects = [];
 
@@ -178,24 +295,67 @@ function create_objects(csvFile, debug) {
             // Here you can parse the CSV text and create objects
             // For simplicity, let's assume each line is an object
             const lines = text.split('\n');
-            const headers = lines[0].replace(/\r$/, '').split(';');
-            if (debug === true)
-                console.log(headers)
+            const headers = lines[0].replace(/\r$/, '').split(separatorInput);
+
+            for (let i = 0; i < headers.length; i++) {
+                if (colMap.hasOwnProperty(i)) {
+                    // Replace the value with the corresponding value from the hashmap
+                    headers[i] = colMap[i];
+                }
+            }
+
+            debug && console.log(headers)
+
             lines.slice(1).forEach((line, index) => {
-                const values = line.replace(/\r$/, '').split(';');
+                let eliminate = false
+                console.log("------------------------")
+                if(line === "") {
+                    console.log("Skipped")
+                    return;
+                }
+                const values = line.replace(/\r$/, '').split(separatorInput);
                 const debug_value = `${values.join(' | ')} (Line ${index + 2})`;
-                if (debug === true)
-                    console.log(debug_value)
+
+                timeCols.forEach( i =>{
+                    console.log("Date: ", values[i])
+                    if(values[i] === "") {
+                        eliminate = true
+                        return
+                    }
+                    if(!isValidDateTimeFormat(values[i], timeFormat))
+                        reject(`${csvFile.name}\nInvalid time format at row ${index+1} column ${i}: ${values[i]}`)
+                })
+
+                dateCols.forEach( i =>{
+                    console.log("Date: ", values[i])
+                    if(values[i] === "") {
+                        eliminate = true
+                        return
+                    }
+                    if(!isValidDateTimeFormat(values[i], dayFormat))
+                        reject(`${csvFile.name}\nInvalid date format at row ${index+1} column ${i}: ${values[i]}`)
+                })
+                console.log(values)
+                console.log("------------------------")
+
+                if(eliminate)
+                    return;
+
                 const obj = {};
                 let p = 0;
                 for (const header of headers) {
-                    if (values[p] !== '')
-                        obj[header] = values[p]
+                    if (values[p] !== '') {
+                        if (values[p] === 'X') {
+                            obj["Características"] = obj["Características"] || [];
+                            obj["Características"].push(header)
+                        }else
+                            obj[header] = values[p]
+                    }
                     p++;
                 }
 
-                if (debug === true)
-                    console.log(obj)
+
+                debug && console.log(obj)
                 objects.push(obj);
             });
 
@@ -205,6 +365,59 @@ function create_objects(csvFile, debug) {
 
         reader.readAsText(csvFile);
     });
+}
+
+function isValidDateTimeFormat(inputString, dateTimeFormat) {
+    console.log("IS ", inputString)
+    console.log("DF ", dateTimeFormat)
+    const separators = ['/', '-', ':'];
+
+    for (const separator of separators) {
+        const formatParts = dateTimeFormat.split(separator);
+        const inputParts = inputString.split(separator);
+
+        if (formatParts.length === inputParts.length) {
+            let isValid = true;
+
+            for (let i = 0; i < formatParts.length; i++) {
+                const formatPart = formatParts[i];
+                const inputPart = inputParts[i];
+
+                const isNumeric = /^\d+$/.test(inputPart);
+                console.log("Separator", separator,"Numeric",isNumeric, " ip length ", inputPart.length, " ip ", inputPart, " formatpart length ", formatPart.length, " fp ", formatPart)
+
+                if (formatPart.length !== inputPart.length || !isNumeric) {
+                    console.log("HERE?")
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (isValid) {
+                //let parsedDateTime = new Date(inputString.trim());
+                const rearrangedDateString = inputParts[formatParts.indexOf('MM')] + separator +
+                    inputParts[formatParts.indexOf('DD')] + separator +
+                    inputParts[formatParts.indexOf('YYYY')];
+                let parsedDateTime = new Date(rearrangedDateString.trim());
+                console.log("UwU ",parsedDateTime)
+                if(isNaN(parsedDateTime.getTime())) {
+                    parsedDateTime = new Date(1970, 0, 1);
+                    // Set the time part
+                    parsedDateTime.setHours(inputParts[formatParts.indexOf('HH')]);
+                    parsedDateTime.setMinutes(inputParts[formatParts.indexOf('mm')]);
+                    parsedDateTime.setSeconds(inputParts[formatParts.indexOf('ss')]);
+                }
+
+                console.log("!isNaN(parsedDateTime.getTime())", !isNaN(parsedDateTime.getTime()))
+                // Check if the parsedDateTime is a valid date and time (not NaN)
+                if (!isNaN(parsedDateTime.getTime())) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -219,7 +432,7 @@ function findConflictingClasses(classes, debug) {
     const classesDone = [];
 
     for (let i = 0; i < classes.length; i++) {
-        const conflictChain = [];
+        let conflictChain = [];
         if (!classesDone.includes(classes[i])) {
             const classA = classes[i];
             conflictChain.push(classA);
@@ -254,8 +467,17 @@ function findConflictingClasses(classes, debug) {
             }
 
             debug && console.log("Conflict Chain: ", conflictChain);
-            conflictingClasses.push(conflictChain);
-        }
+            if(!conflictChain.length>=30)
+                conflictingClasses.push(conflictChain);
+            else {
+                while (conflictChain.length >= 30) {
+                    let array1 = conflictChain.slice(0, 20)
+                    conflictingClasses.push(array1)
+                    conflictChain = conflictChain.slice(20)
+                }
+                conflictingClasses.push(conflictChain);
+            }
+    }
     }
 
     return conflictingClasses;
@@ -495,7 +717,7 @@ function isRoomAvailable(roomName, date, startTime, endTime, debug){
             debug && console.log("Room Name: "+roomName)
 
             if (allocatedRooms[year][month][day][currHour].includes(roomName)) {
-                return true;
+                return false;
             }
         }
         const [hours, minutes] = currHour.split(':').map(Number);
@@ -506,6 +728,7 @@ function isRoomAvailable(roomName, date, startTime, endTime, debug){
         currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
 
     }
+    return true
 
 }
 
@@ -573,102 +796,86 @@ function compareObjectsByDateAndTime(a, b, debug) {
     return dateComparison;
 }
 
-/**
- * Solves a linear programming problem for room allocation.
- *
- * @param {Array} rooms - An array of room objects.
- * @param {Array} classes - An array of class objects.
- * @param {boolean} debug - A flag indicating whether to print debug information.
- * @returns {Object} An object containing the result of the LP problem.
- */
-function solveWithLP(rooms, classes, debug){
-    // LP Problem Formulation
-    const model = {
-        optimize: {
-            waste: "min",
-            value: "max"
-        },
-        constraints: {},
-        variables: {},
-    };
-
-// Create variables for room allocation
-    rooms.forEach((room, roomIndex) => {
-        classes.forEach((cls, classIndex) => {
-
-            if (cls['Inscritos no turno'] <= room['Capacidade Normal']) {
-                const variableName = `${room['Nome sala']}_${cls['Curso']}_${cls['Dia']}_${cls['Início']}_${cls['Fim']}`;
-                model.variables[variableName] = {
-                    [cls['Curso']]: 1,
-                    roomCapacity: room['Capacidade Normal'],
-                    classStudents: cls['Inscritos no turno'],
-                    waste: room['Capacidade Normal'] - cls['Inscritos no turno'],
-                    value: 100 - cls['Inscritos no turno'],
-                };
-
-                let currHour = cls['Início'].split(':').slice(0, 2).join(':')
-                const endTime = cls['Fim']
-                while (compareTimes(currHour, endTime, false)) {
-                    const [hours, minutes] = currHour.split(':').map(Number);
-                    const newMinutes = (minutes + 30) % 60;
-                    const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
-
-                    model.variables[variableName][`${room['Nome sala']}'_'${currHour}`] = 1;
-
-                    if (!model.constraints[`${room['Nome sala']}'_'${currHour}`]) {
-                        model.constraints[`${room['Nome sala']}'_'${currHour}`] = { min: 0, max: 1 };
-                    }
-                    currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
-
-                }
-
-            }
-        });
-    });
-
-    model.constraints['waste'] = { min: 0 };
-    model.constraints['value'] = { min: 0 };
-
-    classes.forEach((cls) => {
-        const constraint = {};
-        model.constraints[cls['Curso']] = { equal: 1 };
-    });
-
-// Solve the LP problem
-    const solution = solver.Solve(model);
-    if (debug) {
-        console.log("Model");
-        console.log(model);
-        console.log("Solution");
-        console.log(solution);
-    }
-
-    let sol = []
-
-    if(solution.vertices) {
-        sol = solution.vertices[0]
-        if(!solution.midpoint.feasible)
-            return -1
-    }else{
-        if(!solution.feasible)
-            return -1
-        sol = solution
-    }
-
-    const variableValues = [];
-    Object.keys(model.variables).forEach(variable => {
-        if (sol[variable] === 1)
-            variableValues.push(constructObject(variable));
-    });
-
-    return {
-        variableValues: variableValues,
-        waste: sol.waste,
-        value: sol.value
-    };
-
-    function constructObject(variable){
-        const temp = variable.split('_')
-        return {'Edifício': temp[0], 'Unidade de Execução': temp[1], 'Dia': temp[2], 'Início': temp[3], 'Fim': temp[4]}
+// Function to start or stop the loading circle based on the value of isLoading
+function toggleLoading() {
+    const loadingCircle = document.getElementById('loadingCircle');
+    if (isLoading) {
+        loadingCircle.style.display = 'block';
+    } else {
+        loadingCircle.style.display = 'none';
     }
 }
+
+function greedyAlg(roomsObjects, scheduleMapByDate){
+    const capacityMap = new Map();
+
+    roomsObjects.sort(compareByCapacidadeNormal)
+
+// Iterate through the objectsArray
+    roomsObjects.forEach((obj) => {
+        const capacity = obj["Capacidade Normal"];
+
+        // Check if the capacity key already exists in the hashmap
+        if (capacityMap.has(capacity)) {
+            // If yes, push the object to the existing array
+            capacityMap.get(capacity).push(obj);
+        } else {
+            // If no, create a new array with the object and set it as the value for the capacity key
+            capacityMap.set(capacity, [obj]);
+        }
+    });
+
+    const matches = []
+    for(const classesDay of scheduleMapByDate){
+        classesDay[1].forEach((cls) => {
+            const requiredCap = cls['Inscritos no turno']
+            const matchingRooms = getValuesForKey(capacityMap, requiredCap, cls["Dia"], cls["Início"], cls["Fim"])
+            if (matchingRooms && matchingRooms[0]){
+                cls["Sala da aula"] = matchingRooms[0]["Nome sala"]
+                cls["Lotação"] = matchingRooms[0]["Capacidade Normal"]
+                cls["Características reais da sala"] = matchingRooms[0]["Características"]
+                markAsUnavailable(matchingRooms[0]["Nome sala"],cls["Dia"], cls["Início"], cls["Fim"], false)
+            }
+            matches.push(cls)
+        })
+    }
+
+    displayCalendar(matches)
+
+    function compareByCapacidadeNormal(a, b) {
+        const capacidadeA = a["Capacidade Normal"];
+        const capacidadeB = b["Capacidade Normal"];
+
+        return capacidadeA - capacidadeB;
+    }
+    function getValuesForKey(map, searchKey, date, startTime, endTime) {
+
+        if (map.has(searchKey)) {
+            const values = map.get(searchKey)
+            const availableRooms = []
+            values.forEach((room) => {
+                if(isRoomAvailable(room["Nome sala"], date, startTime, endTime, true)){
+                    availableRooms.push(room)
+                }
+            })
+            return availableRooms;
+        } else {
+
+            let keys = Object(map.keys());
+            for (let key of keys) {
+                if (key > searchKey) {
+                    const values = map.get(key)
+                    const availableRooms = []
+                    values.forEach((room) => {
+
+                        if(isRoomAvailable(room["Nome sala"], date, startTime, endTime, true)){
+                            availableRooms.push(room)
+                        }
+                    })
+                    return availableRooms
+                }
+            }
+            }
+    }
+}
+

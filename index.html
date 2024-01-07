@@ -6,9 +6,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <link rel="stylesheet" href="gui.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <title>ADHD</title>
     <style>
         body {
             margin: 0;
@@ -32,15 +34,125 @@
         li {
             margin-right: 10px; /* Add some spacing between list items */
         }
+        /* Style for the loading circle */
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20% auto;
+        }
+
+        /* Animation for the loading circle */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
+<header>
+    <h1>WHERE WE DROPIN' BOYS?!</h1>
+</header>
+
+
 <body>
 <form id="csvForm">
-   <input type="file" id="roomsCSV" accept=".csv" />
-   <input type="file" id="scheduleCSV" accept=".csv" />
-   <br />
-   <input type="submit" value="Submit" />
+    <div class="container">
+    <div class="drop-zone" id="dropZone1">
+        <span class="drop-zone__prompt">Drop <span style="color: #246BA9; font-weight: bold; font-size: larger;">rooms</span> file here or click to upload</span>
+        <input type="file" name="myFile1" id="roomsCSV" class="drop-zone__input" accept=".csv" onchange="showMenu('menu1', this)">
+    </div>
+
+
+
+    <div class="drop-zone" id="dropZone2">
+        <span class="drop-zone__prompt">Drop <span style="color: #246BA9; font-weight: bold; font-size: larger;">classes</span> file here or click to upload</span>
+        <input type="file" name="myFile2" id="scheduleCSV" class="drop-zone__input" accept=".csv" onchange="showMenu('menu2', this)">
+    </div>
+
+
+        <div class="menu" id="menu1" style="display: none" >
+            <h1 style="margin-bottom: 20px; font-size: larger;">Select which columns are what</h1>
+            <label for="menu1Selection">Room Capacity:</label>
+            <select id="menu1Selection">
+            </select>
+            <label for="menu12Selection">Room Name:</label>
+            <select id="menu12Selection">
+            </select>
+            <label for="menu13Selection">Room Characteristics First Column:</label>
+            <select id="menu13Selection">
+            </select>
+            <label for="menu14Selection">Room Characteristics Last Column:</label>
+            <select id="menu14Selection">
+            </select>
+        </div>
+
+        <div class="menu" id="menu2" style="display: none;">
+            <h1 style="margin-bottom: 20px; font-size: larger;">Select which columns are what</h1>
+            <label for="menu2Selection">UC Beginning Time:</label>
+            <select id="menu2Selection">
+            </select>
+            <label for="menu22Selection">UC End Time:</label>
+            <select id="menu22Selection">
+            </select>
+            <label for="menu23Selection">UC Date:</label>
+            <select id="menu23Selection">
+            </select>
+            <label for="menu24Selection">UC Students Enrolled:</label>
+            <select id="menu24Selection">
+            </select>
+            <label for="menu25Selection">UC Room Characteristics Needed:</label>
+            <select id="menu25Selection">
+            </select>
+            <label for="menu26Selection">UC Name:</label>
+            <select id="menu26Selection">
+            </select>
+        </div>
+    </div>
+
+    <div id="separator--csv">
+        <label for="separatorInput">Enter CSV Separator:</label>
+        <input type="text" id="separatorInput" maxlength="1" placeholder="e.g. ,">
+    </div>
+
+    <div id="alg--choose">
+    <label>Check what you want:</label>
+    <ul>
+        <li><input type="checkbox" id="check1" name="check1"> Option 1</li>
+        <li><input type="checkbox" id="check2" name="check2"> Option 2</li>
+        <li><input type="checkbox" id="check3" name="check3"> Option 3</li>
+    </ul>
+    </div>
+
+    <div id="file--options">
+        <label for="timeFormatSelector">Choose the time format used in the files.
+            For example 14 hours 30 minutes and 59 seconds would be:</label>
+        <select id="timeFormatSelector">
+            <option value="HH:mm:ss">14:30:59</option>
+            <option value="HH-mm-ss">14-30-59</option>
+            <option value="H:mm:ss a">02:30:59 pm</option>
+            <option value="H:mm:ss a">02-30-59 pm</option>
+            <option value="h:mm:ss A">02:30:59 PM</option>
+            <option value="h:mm:ss A">02-30-59 PM</option>
+        <!-- Add more options as needed -->
+        </select>
+
+        <label for="dayFormatSelector">Choose the time format used in the files.
+            For example 31 january 2023 would be:</label>
+        <select id="dayFormatSelector">
+            <option value="DD-MM-YYYY">31-01-2023</option>
+            <option value="DD/MM/YYYY">31/01/2023</option>
+            <option value="MM/DD/YYYY">01-31-2023</option>
+            <option value="MM/DD/YYYY">01/31/2023</option>
+            <option value="YYYY/MM/DD">2023/01/31</option>
+            <option value="YYYY/MM/DD">2023-01-31</option>
+        </select>
+    </div>
+    <input type="submit" id="submitBtn" value="Submit Files">
+
 </form>
 
 <div id="result-rooms-container" class="box">
@@ -53,11 +165,17 @@
 </div>
 
 <div id="calendar">
-
 </div>
+
+<div class="loader" id="loadingCircle" style="display: none"></div>
+
+<footer>
+    <p>&copy; 2024 Ratices Lda. All rights reserved.</p>
+</footer>
 
 <script src="https://unpkg.com/javascript-lp-solver/prod/solver.js"></script>
 <script src=index.js></script>
+<script src=gui.js></script>
 </body>
 
 </html>

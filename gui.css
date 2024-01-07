@@ -1,0 +1,150 @@
+:root {
+    --header-bg-color: #0D28C2;
+    --header-text-color: #fff;
+    --accent-color: #0046BE;
+    --box-bg-color: #bde2f6;
+    --box-text-color: #03396C;
+    --button-bg-color: #5289b7;
+    --button-hover-color: #0D28C2;
+    --containers-color: #d0e2f8;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+}
+
+header {
+    background-color: var(--header-bg-color);
+    color: var(--header-text-color);
+    padding: 10px;
+    text-align: center;
+}
+
+footer {
+    background-color:  var(--header-bg-color);
+    color: var(--header-text-color);
+    padding: 10px;
+    text-align: center;
+    margin-top: auto;
+    width: auto;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    margin: 25px auto;
+    background-color: var(--containers-color);
+    max-width: 700px;
+    border-radius: 10px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    margin: 20px;
+    display: grid; /* Set the container as a grid container */
+    grid-template-columns: repeat(2, 1fr); /* Create two columns with equal width */
+    gap: 20px; /* Adjust the gap between grid items as needed */
+    justify-items: center;
+}
+
+
+.drop-zone {
+    margin: 10px;
+    width: auto;
+    height: auto;
+    max-width: 200px;
+    min-width: 200px; /* Set a minimum width */
+    min-height: 200px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: "Quicksand", sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    cursor: pointer;
+    background-color: var(--box-bg-color);
+    color: var(--box-text-color);
+    border: 4px dashed var(--accent-color);
+    border-radius: 10px;
+}
+
+.menu {
+    width: auto;
+    height: auto;
+    max-width: 180px;
+    min-width: 180px; /* Set a minimum width */
+    padding: 25px;
+    background-color: var(--box-bg-color);
+    color: var(--box-text-color);
+    border: 4px solid var(--accent-color);
+    border-radius: 10px;
+}
+
+.menu label {
+    display: block;
+    margin-bottom: 4px; /* Adjust the margin as needed */
+}
+
+.menu select {
+    margin-bottom: 20px; /* Adjust the margin as needed */
+}
+
+.drop-zone--over {
+    border-style: solid;
+}
+
+.drop-zone__input {
+    display: none;
+}
+
+.drop-zone__thumb {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #cccccc;
+    background-size: cover;
+    position: relative;
+}
+
+.drop-zone__thumb::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 5px 0;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.75);
+    font-size: 14px;
+    text-align: center;
+}
+
+#submitBtn {
+    margin-right: auto;
+    margin-left: auto;
+    display: none;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: var(--button-bg-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#submitBtn:hover {
+    background-color: var(--button-hover-color);
+}
+
+#submitBtn:focus {
+    outline: none;
+}
