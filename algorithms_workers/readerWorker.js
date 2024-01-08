@@ -1,5 +1,4 @@
 onmessage = function (event) {
-    console.log("Created");
 
     const {
         chunk,
@@ -59,16 +58,22 @@ onmessage = function (event) {
         let p = 0;
         for (const header of headers) {
             if (values[p] !== '') {
-                if (values[p] === 'X') {
-                    obj["Características"] = obj["Características"] || [];
-                    obj["Características"].push(header);
-                } else {
-                    obj[header] = values[p];
+                //console.log(header)
+                if(header === 'Características da sala pedida para a aula'){
+                    obj[header] = obj[header] || []
+                    const temp = values[p].split(',')
+                    temp.forEach( v => obj[header].push(v))
+                }else {
+                    if (values[p] === 'X') {
+                        obj["Características"] = obj["Características"] || [];
+                        obj["Características"].push(header);
+                    } else {
+                        obj[header] = values[p];
+                    }
                 }
             }
             p++;
         }
-
         objects.push(obj);
     });
 

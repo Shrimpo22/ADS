@@ -108,9 +108,6 @@ csvForm.addEventListener("submit", function (e) {
 
     Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
-
-            console.log("RO ", roomsObjects)
-            console.log("SO ", scheduleObjects)
             if (roomsObjects.length === 0 || scheduleObjects.length === 0  ){
                 alert("One of the csv files is possibly blank or missing required columns!")
                 isLoading=0
@@ -195,7 +192,8 @@ csvForm.addEventListener("submit", function (e) {
             //     } )
             // })
 
-            greedyAlg(roomsObjects, objectsByDateMap)
+            //greedyAlg(roomsObjects, objectsByDateMap)
+            ratatouille(roomsObjects, scheduleObjects, false)
             isLoading=0
             toggleLoading()
 
@@ -295,16 +293,13 @@ function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, 
             const objects = []
 
             chunks.forEach((chunk, index) => {
-                //console.log("UwU")
                 const worker = new Worker('algorithms_workers/readerWorker.js'); // Specify the path to your worker script
                 workersCount++
-                //console.log("STARTED", workersCount)
                 workers.push(worker);
 
 
                 worker.onmessage = function (event) {
                     workersCount--
-                    //console.log("FINISHED", workersCount)
                     if (event.data.error) {
                         reject(event.data.error);
                     } else {
@@ -312,7 +307,6 @@ function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, 
                     }
                     worker.terminate();
                     if (workersCount === 0) {
-                        console.log("UWU", objects)
                         resolve(objects)
                     }
 
@@ -427,88 +421,7 @@ function findConflictingClasses(classes, debug) {
 /*
 * WIP -Work In Progress
 * */
-function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
-    const resultContainer = document.getElementById('result-match-container');
 
-    //criar um hashmap (com sala, hora alocada)  aqui no início para adicionar as salas que nao estao disponivies. Após alocarmos uma sala, adicionamos a este map, e sempre que quisermos alocar uma sala vamos verificar neste map se a sala àquela hora nao se encontra no map
-    // ter uma var tolerancia
-
-    const objectsByDateMap = new Map();
-
-    scheduleObjects.sort(compareObjectsByDateAndTime);
-    console.log("Sorted")
-    console.log(scheduleObjects)
-
-    console.log("Rooomssssssssssss")
-    console.log(roomsObjects)
-
-    scheduleObjects.forEach((obj) => {
-        // Extract the date from the current object
-        const date = obj['Dia'];
-        console.log("Date: "+ date)
-        // Check if the date is already a key in the map
-        if (objectsByDateMap.has(date)) {
-            // If the date exists, add the current object to the existing array
-            objectsByDateMap.get(date).push(obj);
-        } else {
-            // If the date doesn't exist, create a new array with the current object
-            objectsByDateMap.set(date, [obj]);
-        }
-    });
-
-    // console.log(objectsByDateMap)
-    //
-    // objectsByDateMap.forEach((objects, date) => {
-    //     console.log(`Date: ${date}`);
-    //     console.log(objects);
-    //     console.log("-------------------");
-    //
-    //
-    //     //cenas com filtros falta implementar algoritmo, tás a pensar em divide and conquer seu lerdo amo te beijo no traseiro
-    //     const startHour = "13:00:00"
-    //     const filtered = objects.filter(obj => compareTimes(obj['Início'], startHour) <= 0)
-    //     console.log("Filtered")
-    //     console.log(filtered)
-    //     console.log("-------------------")
-    // });
-
-    isRoomAvailable("AA3.23","02/12/2022", "13:00:00", "14:30:00", false)
-
-    //scheduleObjects.sort((a,b) => a[date])
-    //console.log()
-
-
-    for (const so of scheduleObjects) {
-        const requiredCapacity = so['Inscritos no turno'];
-        const requestedClass = so['Características da sala pedida para a aula']
-
-        const matchingRooms = roomsObjects
-            .filter(ro => ro['Capacidade Normal'] >= requiredCapacity && ro[requestedClass] === 'X')
-            .map(ro => ro['Nome sala']);
-
-        const requirementsList = so['Características da sala pedida para a aula']
-        const listItems = matchingRooms.map(room => `<li>${room}</li>`).join('');
-
-        const htmlContent = `
-            <h2>${so['Unidade de execução']} no dia ${so['Dia']} que precisa de ${so['Inscritos no turno']} lugares:</h2>
-            <ul style="color: cornflowerblue;">${requirementsList}</ul>
-            <ul style="color: indianred;">${listItems}</ul>
-        `;
-
-        // Create a new div element to hold the HTML content
-        const divElement = document.createElement('div');
-        divElement.classList.add('box'); // add the 'box' class to the created div
-        divElement.innerHTML = htmlContent;
-
-        // Append the div to the result container
-        resultContainer.appendChild(divElement);
-
-        if (debug === true) {
-            console.log(`Para a Unidade de execução ${so['Unidade de execução']} no dia ${so['Dia']} que precisa de ${so['Inscritos no turno']} lugares temos as seguinte salas disponíveis`);
-            console.log('Salas com os requerimentos solicitados:', matchingRooms);
-        }
-    }
-}
 
 /**
  * Prints a table of objects to a specified result container.

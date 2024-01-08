@@ -8,17 +8,15 @@ const mainMatches = []
 let currDay = 0
 
 function greedyAlg(roomsObjects, schDate) {
-    console.log("AD")
     workerPool = new LinkedList()
     scheduleMapByDate = new Map()
     capacityMap = new Map()
+
     // Initialize the worker pool
     for (let i = 0; i < MAX_CONCURRENT_WORKERS; i++) {
         const worker = new Worker('algorithms_workers/greedyWorker.js');
-        console.log("BEg day ", worker)
         workerPool.push(worker);
     }
-    console.log("AB")
 
     scheduleMapByDate = schDate
     totalDays = scheduleMapByDate.size
@@ -55,13 +53,11 @@ function greedyAlg(roomsObjects, schDate) {
 
 function runAlgorithmForDay(dayIndex) {
     const worker = workerPool.pop();
-    console.log("Alg day ", worker)
 
     let i=0
     let keyToSearch = 0
     for(let key of Object(scheduleMapByDate.keys())) {
         if (i === dayIndex) {
-            console.log(key)
             keyToSearch = key
             break
         }
@@ -69,19 +65,14 @@ function runAlgorithmForDay(dayIndex) {
     }
 
     const data = {
-        dayIndex,
         scheduleForDay: scheduleMapByDate.get(keyToSearch),
         capacityMap
     };
 
     worker.postMessage(data);
-    console.log("Message sent")
 
     worker.onmessage = function (e) {
-        const { dayIndex, matches } = e.data;
-
-        // Process the result as needed
-        console.log(`Matches for day ${dayIndex}:`, matches);
+        const { matches } = e.data;
 
         matches.forEach(m => mainMatches.push(m))
 
@@ -99,7 +90,6 @@ function runAlgorithmForDay(dayIndex) {
 }
 
 function startNextWorker() {
-    console.log("Index ", currDay, " Workers ", workerPool)
     if (workerPool.peek())
         runAlgorithmForDay(currDay);
 

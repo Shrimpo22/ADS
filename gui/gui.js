@@ -118,8 +118,6 @@ function updateThumbnail(dropZoneElement, file) {
             // Parse CSV content and create a scrollable styled table with headers
             const csvContent = reader.result;
             const rows = csvContent.split('\n').map(row => row.split(';'));
-
-            console.log(rows)
             const columnNames = rows[0];
 
             // Update options for all select elements within the drop zone group

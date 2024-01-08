@@ -1,8 +1,6 @@
 const allocatedRooms = {}
 onmessage = function (e) {
-    const { dayIndex, scheduleForDay, capacityMap} = e.data;
-
-    console.log("Data received", scheduleForDay)
+    const { scheduleForDay, capacityMap} = e.data;
 
     const matches = [];
     scheduleForDay.forEach((cls) => {
@@ -29,7 +27,7 @@ onmessage = function (e) {
         matches.push(cls);
     });
 
-    postMessage({ dayIndex, matches });
+    postMessage({ matches });
 
 
 
