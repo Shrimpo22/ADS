@@ -139,8 +139,8 @@ csvForm.addEventListener("submit", function (e) {
             const resultScheduleContainer = document.getElementById('result-schedule-container');
             const resultLPContainer = document.getElementById('result-match-container');
 
-            printObjectsTable(roomsObjects, resultRoomsContainer)
-            printObjectsTable(scheduleObjects, resultScheduleContainer)
+            printObjectsTable(roomsObjects, resultRoomsContainer, rooms_input.name)
+            printObjectsTable(scheduleObjects, resultScheduleContainer, schedule_input.name)
 
             const objectsByDateMap = new Map();
 
@@ -228,10 +228,6 @@ csvForm.addEventListener("submit", function (e) {
 function displayCalendar(events){
 
     var convertedEvents = events.map(function(event) {
-        console.log(event)
-        console.log("SO BADI 1", event["Unidade de execução"])
-        console.log("SO BADI 2", event.Início)
-        console.log("SO BADI 3", event.Fim)
 
         var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
         var endDateTime = moment(event.Dia + ' ' + event.Fim, 'DD/MM/YYYY HH:mm:ss');
@@ -276,6 +272,7 @@ function displayCalendar(events){
         // Additional options can be added here
     });
 
+    document.getElementById('calendar-container').style.display = 'flex';
 }
 
 /**
@@ -286,138 +283,76 @@ function displayCalendar(events){
  * @returns {Promise<Array<Object>>} A promise that resolves with an array of objects.
  */
 function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, timeCols, dateCols, debug) {
-    const reader = new FileReader();
-    const objects = [];
-
     return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
         reader.onload = function (e) {
             const text = e.target.result;
-            // Here you can parse the CSV text and create objects
-            // For simplicity, let's assume each line is an object
-            const lines = text.split('\n');
+            let lines = text.split('\n');
             const headers = lines[0].replace(/\r$/, '').split(separatorInput);
 
             for (let i = 0; i < headers.length; i++) {
                 if (colMap.hasOwnProperty(i)) {
-                    // Replace the value with the corresponding value from the hashmap
                     headers[i] = colMap[i];
                 }
             }
+            lines = lines.slice(1)
+            const chunkSize = Math.ceil(lines.length / navigator.hardwareConcurrency);
+            const chunks = [];
 
-            debug && console.log(headers)
+            for (let i = 1; i <= navigator.hardwareConcurrency; i++) {
+                const start = (i - 1) * chunkSize;
+                const end = start + chunkSize;
+                const chunk = lines.slice(start, end);
+                chunks.push(chunk);
+            }
 
-            lines.slice(1).forEach((line, index) => {
-                let eliminate = false
-                console.log("------------------------")
-                if(line === "") {
-                    console.log("Skipped")
-                    return;
-                }
-                const values = line.replace(/\r$/, '').split(separatorInput);
-                const debug_value = `${values.join(' | ')} (Line ${index + 2})`;
+            const workers = [];
+            let workersCount = 0
+            const objects = []
 
-                timeCols.forEach( i =>{
-                    console.log("Date: ", values[i])
-                    if(values[i] === "") {
-                        eliminate = true
-                        return
+            chunks.forEach((chunk, index) => {
+                //console.log("UwU")
+                const worker = new Worker('readerWorker.js'); // Specify the path to your worker script
+                workersCount++
+                //console.log("STARTED", workersCount)
+                workers.push(worker);
+
+
+                worker.onmessage = function (event) {
+                    workersCount--
+                    //console.log("FINISHED", workersCount)
+                    if (event.data.error) {
+                        reject(event.data.error);
+                    } else {
+                        event.data.results.forEach(obj=>objects.push(obj))
                     }
-                    if(!isValidDateTimeFormat(values[i], timeFormat))
-                        reject(`${csvFile.name}\nInvalid time format at row ${index+1} column ${i}: ${values[i]}`)
-                })
-
-                dateCols.forEach( i =>{
-                    console.log("Date: ", values[i])
-                    if(values[i] === "") {
-                        eliminate = true
-                        return
+                    worker.terminate();
+                    if (workersCount === 0) {
+                        console.log("UWU", objects)
+                        resolve(objects)
                     }
-                    if(!isValidDateTimeFormat(values[i], dayFormat))
-                        reject(`${csvFile.name}\nInvalid date format at row ${index+1} column ${i}: ${values[i]}`)
-                })
-                console.log(values)
-                console.log("------------------------")
 
-                if(eliminate)
-                    return;
+                };
 
-                const obj = {};
-                let p = 0;
-                for (const header of headers) {
-                    if (values[p] !== '') {
-                        if (values[p] === 'X') {
-                            obj["Características"] = obj["Características"] || [];
-                            obj["Características"].push(header)
-                        }else
-                            obj[header] = values[p]
-                    }
-                    p++;
-                }
+                const csvFileName = csvFile.name
 
-
-                debug && console.log(obj)
-                objects.push(obj);
+                worker.postMessage({
+                    chunk,
+                    headers,
+                    separatorInput,
+                    timeFormat,
+                    dayFormat,
+                    timeCols,
+                    dateCols,
+                    csvFileName,
+                    debug,
+                });
             });
-
-            // Resolve the promise with the created objects
-            resolve(objects);
         };
 
         reader.readAsText(csvFile);
     });
-}
-
-function isValidDateTimeFormat(inputString, dateTimeFormat) {
-    console.log("IS ", inputString)
-    console.log("DF ", dateTimeFormat)
-    const separators = ['/', '-', ':'];
-
-    for (const separator of separators) {
-        const formatParts = dateTimeFormat.split(separator);
-        const inputParts = inputString.split(separator);
-
-        if (formatParts.length === inputParts.length) {
-            let isValid = true;
-
-            for (let i = 0; i < formatParts.length; i++) {
-                const formatPart = formatParts[i];
-                const inputPart = inputParts[i];
-
-                const isNumeric = /^\d+$/.test(inputPart);
-                console.log("Separator", separator,"Numeric",isNumeric, " ip length ", inputPart.length, " ip ", inputPart, " formatpart length ", formatPart.length, " fp ", formatPart)
-
-                if (formatPart.length !== inputPart.length || !isNumeric) {
-                    console.log("HERE?")
-                    isValid = false;
-                    break;
-                }
-            }
-
-            if (isValid) {
-                //let parsedDateTime = new Date(inputString.trim());
-                const rearrangedDateString = inputParts[formatParts.indexOf('MM')] + separator +
-                    inputParts[formatParts.indexOf('DD')] + separator +
-                    inputParts[formatParts.indexOf('YYYY')];
-                let parsedDateTime = new Date(rearrangedDateString.trim());
-                console.log("UwU ",parsedDateTime)
-                if(isNaN(parsedDateTime.getTime())) {
-                    parsedDateTime = new Date(1970, 0, 1);
-                    // Set the time part
-                    parsedDateTime.setHours(inputParts[formatParts.indexOf('HH')]);
-                    parsedDateTime.setMinutes(inputParts[formatParts.indexOf('mm')]);
-                    parsedDateTime.setSeconds(inputParts[formatParts.indexOf('ss')]);
-                }
-
-                console.log("!isNaN(parsedDateTime.getTime())", !isNaN(parsedDateTime.getTime()))
-                // Check if the parsedDateTime is a valid date and time (not NaN)
-                if (!isNaN(parsedDateTime.getTime())) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
 }
 
 /**
@@ -598,7 +533,7 @@ function assignRoomsToClasses(roomsObjects, scheduleObjects, debug) {
  * @param {Array<Object>} objObjects - Array of objects to be displayed.
  * @param {HTMLElement} resultContainer - HTML element to display the table.
  */
-function printObjectsTable(objObjects, resultContainer) {
+function printObjectsTable(objObjects, resultContainer, title) {
     // Check if there are rooms to display
     if (objObjects.length === 0) {
         resultContainer.innerHTML = '<p>No rooms available</p>';
@@ -615,18 +550,21 @@ function printObjectsTable(objObjects, resultContainer) {
         return keys;
     }, []);
 
+    const titleEl = document.createElement('span')
+    titleEl.classList.add('title')
+    titleEl.textContent = title
+
     // Create the table element
     const table = document.createElement('table');
-    table.style.borderCollapse = 'collapse'; // Add border-collapse style
+    table.classList.add('table-container');
 
     // Create the table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
+
     allKeys.forEach(key => {
         const th = document.createElement('th');
         th.textContent = key;
-        th.style.border = '1px solid #dddddd'; // Add border style
-        th.style.padding = '8px'; // Add padding for better visibility
         headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
@@ -639,8 +577,6 @@ function printObjectsTable(objObjects, resultContainer) {
         allKeys.forEach(key => {
             const cell = document.createElement('td');
             cell.textContent = obj[key] || ''; // Handle cases where a key is not present in an object
-            cell.style.border = '1px solid #dddddd'; // Add border style
-            cell.style.padding = '8px'; // Add padding for better visibility
             row.appendChild(cell);
         });
         tbody.appendChild(row);
@@ -649,7 +585,9 @@ function printObjectsTable(objObjects, resultContainer) {
 
     // Append the table to the result container
     resultContainer.innerHTML = ''; // Clear existing content
+    resultContainer.appendChild(titleEl);
     resultContainer.appendChild(table);
+    resultContainer.style.display = 'flex';
 }
 
 /**
@@ -840,6 +778,7 @@ function greedyAlg(roomsObjects, scheduleMapByDate){
         })
     }
 
+    printObjectsTable(matches, document.getElementById('result-match-container'), "Allocations Greedy")
     displayCalendar(matches)
 
     function compareByCapacidadeNormal(a, b) {

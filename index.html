@@ -12,44 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <title>ADHD</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
 
-        .box {
-            border: 1px solid #000;
-            padding: 20px;
-            margin: 10px;
-            box-sizing: border-box;
-        }
-             /* Add some basic styling for the list items */
-         ul {
-             list-style-type: none;
-             padding: 0;
-             margin: 0;
-             display: flex; /* Make the container a flex container */
-         }
 
-        li {
-            margin-right: 10px; /* Add some spacing between list items */
-        }
-        /* Style for the loading circle */
-        .loader {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20% auto;
-        }
-
-        /* Animation for the loading circle */
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 
@@ -155,19 +119,24 @@
 
 </form>
 
-<div id="result-rooms-container" class="box">
-</div>
-
-<div id="result-schedule-container" class="box">
-</div>
-
-<div id="result-match-container" class="box">
-</div>
-
-<div id="calendar">
-</div>
-
 <div class="loader" id="loadingCircle" style="display: none"></div>
+
+<div id="result-rooms-container" style="display: none" class="box">
+    <span class="title"></span>
+</div>
+
+<div id="result-schedule-container" style="display: none" class="box">
+</div>
+
+<div id="result-match-container" style="display: none" class="box">
+</div>
+<div id="calendar-container" style="display: none" class="box">
+<div id="calendar" >
+</div>
+</div>
+
+
+
 
 <footer>
     <p>&copy; 2024 Ratices Lda. All rights reserved.</p>
