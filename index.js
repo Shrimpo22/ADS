@@ -193,7 +193,7 @@ csvForm.addEventListener("submit", function (e) {
             // })
 
             //greedyAlg(roomsObjects, objectsByDateMap)
-            ratatouille(roomsObjects, scheduleObjects, false)
+            ratatouille(roomsObjects, objectsByDateMap, false)
             isLoading=0
             toggleLoading()
 

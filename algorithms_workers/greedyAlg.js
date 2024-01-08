@@ -1,4 +1,4 @@
-const MAX_CONCURRENT_WORKERS = 3; // Set the maximum number of concurrent workers
+const MAX_CONCURRENT_WORKERS = navigator.hardwareConcurrency - 1; // Set the maximum number of concurrent workers
 let workerPool=[]
 
 let scheduleMapByDate = []
@@ -83,6 +83,7 @@ function runAlgorithmForDay(dayIndex) {
         if (currDay < totalDays - 1) {
             startNextWorker();
         }else {
+            workerPool.forEach(worker => worker.terminate())
             printObjectsTable(mainMatches, document.getElementById("result-match-container"), "Greedy Allocation")
             displayCalendar(mainMatches)
         }

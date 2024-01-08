@@ -55,10 +55,10 @@ class LinkedList {
         return this.head ? this.head.value : undefined;
     }
 
-    display() {
+    forEach(callback) {
         let current = this.head;
         while (current) {
-            console.log(current.value);
+            callback(current.value);
             current = current.next;
         }
     }
