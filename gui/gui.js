@@ -166,16 +166,94 @@ function updateThumbnail(dropZoneElement, file) {
     }
 }
 
-function showSelectionMenus() {
-    var file1 = document.getElementById("file1");
-    var file2 = document.getElementById("file2");
+function saveConfigurations() {
+    const configurations = {
+        check1: document.getElementById('check1').checked,
+        check2: document.getElementById('check2').checked,
+        check3: document.getElementById('check3').checked,
+        timeFormat: document.getElementById('timeFormatSelector').value,
+        dayFormat: document.getElementById('dayFormatSelector').value,
+        menu1_menu1Selection: document.getElementById("menu1Selection").value,
+        menu1_menu12Selection: document.getElementById("menu12Selection").value,
+        menu1_menu13Selection: document.getElementById("menu13Selection").value,
+        menu1_menu14Selection: document.getElementById("menu14Selection").value,
 
-    // Show the menu for File 1 if a file is selected
-    showMenu("menu1", file1);
+        menu2_menu2Selection: document.getElementById("menu2Selection").value,
+        menu2_menu22Selection: document.getElementById("menu22Selection").value,
+        menu2_menu23Selection: document.getElementById("menu23Selection").value,
+        menu2_menu24Selection: document.getElementById("menu24Selection").value,
+        menu2_menu25Selection: document.getElementById("menu25Selection").value,
+        menu2_menu26Selection: document.getElementById("menu26Selection").value,
 
-    // Show the menu for File 2 if a file is selected
-    showMenu("menu2", file2);
+        separatorInput: document.getElementById('separatorInput').value,
 
+        // Add more configurations as needed
+    };
+
+    const jsonContent = JSON.stringify(configurations);
+    localStorage.setItem('formConfigurations', jsonContent);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = url;
+    downloadLink.style.display = 'block';
+}
+
+function handleFile() {
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const jsonContent = JSON.parse(e.target.result);
+
+            setSelectOption('menu1Selection', jsonContent.menu1_menu1Selection);
+            setSelectOption('menu12Selection', jsonContent.menu1_menu12Selection);
+            setSelectOption('menu13Selection', jsonContent.menu1_menu13Selection);
+            setSelectOption('menu14Selection', jsonContent.menu1_menu14Selection);
+
+            setSelectOption('menu2Selection', jsonContent.menu2_menu2Selection);
+            setSelectOption('menu22Selection', jsonContent.menu2_menu22Selection);
+            setSelectOption('menu23Selection', jsonContent.menu2_menu23Selection);
+            setSelectOption('menu24Selection', jsonContent.menu2_menu24Selection);
+            setSelectOption('menu25Selection', jsonContent.menu2_menu25Selection);
+            setSelectOption('menu26Selection', jsonContent.menu2_menu26Selection);
+
+            setValue('separatorInput', jsonContent.separatorInput)
+
+            setCheckbox('check1', jsonContent.check1);
+            setCheckbox('check2', jsonContent.check2);
+            setCheckbox('check3', jsonContent.check3);
+
+            setValue('timeFormatSelector', jsonContent.timeFormat);
+            setValue('dayFormatSelector', jsonContent.dayFormat)
+
+        };
+
+        reader.readAsText(file);
+    }
+}
+
+function setCheckbox(id, value) {
+    document.getElementById(id).checked = value;
+}
+
+function setValue(id, value) {
+    document.getElementById(id).value = value;
+}
+
+function setSelectOption(id, value) {
+    const select = document.getElementById(id);
+    const option = select.querySelector(`option[value="${value}"]`);
+
+    if (option) {
+        select.value = value;
+    } else {
+        console.error(`Option with value ${value} not found in select element ${id}`);
+        // Handle the case where the option is not found
+    }
 }
 
 function showMenu(menuId, fileInput) {

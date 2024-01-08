@@ -22,38 +22,11 @@ const scheduleCSV = document.getElementById("scheduleCSV");
  * Object to store allocatedRooms data.
  * @type {Object}
  */
-const allocatedRooms = {}
+
 
 let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
 
-let boolError = false;
 
-function saveConfigurations() {
-    const configurations = {
-        check1: document.getElementById('check1').checked,
-        check2: document.getElementById('check2').checked,
-        check3: document.getElementById('check3').checked,
-        timeFormat: document.getElementById('timeFormatSelector').value,
-        dayFormat: document.getElementById('dayFormatSelector').value,
-        menu1_menu1Selection: document.getElementById("menu1Selection").value,
-        menu1_menu12Selection: document.getElementById("menu12Selection").value,
-        menu1_menu13Selection: document.getElementById("menu13Selection").value,
-        menu1_menu14Selection: document.getElementById("menu14Selection").value,
-
-        menu2_menu2Selection: document.getElementById("menu2Selection").value,
-        menu2_menu22Selection: document.getElementById("menu22Selection").value,
-        menu2_menu23Selection: document.getElementById("menu23Selection").value,
-        menu2_menu24Selection: document.getElementById("menu24Selection").value,
-        menu2_menu25Selection: document.getElementById("menu25Selection").value,
-        menu2_menu26Selection: document.getElementById("menu26Selection").value,
-
-        separatorInput: document.getElementById('separatorInput').value,
-
-        // Add more configurations as needed
-    };
-
-    localStorage.setItem('formConfigurations', JSON.stringify(configurations));
-}
 
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
@@ -135,6 +108,16 @@ csvForm.addEventListener("submit", function (e) {
 
     Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
+
+            console.log("RO ", roomsObjects)
+            console.log("SO ", scheduleObjects)
+            if (roomsObjects.length === 0 || scheduleObjects.length === 0  ){
+                alert("One of the csv files is possibly blank or missing required columns!")
+                isLoading=0
+                toggleLoading()
+                return
+
+            }
             const resultRoomsContainer = document.getElementById('result-rooms-container');
             const resultScheduleContainer = document.getElementById('result-schedule-container');
             const resultLPContainer = document.getElementById('result-match-container');
@@ -313,7 +296,7 @@ function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, 
 
             chunks.forEach((chunk, index) => {
                 //console.log("UwU")
-                const worker = new Worker('readerWorker.js'); // Specify the path to your worker script
+                const worker = new Worker('algorithms_workers/readerWorker.js'); // Specify the path to your worker script
                 workersCount++
                 //console.log("STARTED", workersCount)
                 workers.push(worker);
@@ -412,7 +395,7 @@ function findConflictingClasses(classes, debug) {
                 }
                 conflictingClasses.push(conflictChain);
             }
-    }
+        }
     }
 
     return conflictingClasses;
@@ -591,50 +574,6 @@ function printObjectsTable(objObjects, resultContainer, title) {
 }
 
 /**
- * Marks a room as unavailable during a specified time range.
- *
- * @param {string} roomName - The name of the room to be marked as unavailable.
- * @param {string} date - The date for which the room is marked as unavailable.
- * @param {string} startTime - The start time of the unavailability period.
- * @param {string} endTime - The end time of the unavailability period.
- * @param {boolean} debug - Flag to enable debugging output.
- */
-function markAsUnavailable(roomName, date, startTime, endTime, debug) {
-
-    const [day, month, year] = date.split('/');
-    let hourStart = startTime.split(':').slice(0, 2).join(':');
-
-    debug && console.log("HourStart: " + hourStart);
-
-    // Check if the year exists in the allocatedRooms, if not, add it
-    allocatedRooms[year] = allocatedRooms[year] || {};
-
-    // Check if the month exists in the year, if not, add it
-    allocatedRooms[year][month] = allocatedRooms[year][month] || {};
-
-    // Check if the day exists in the month, if not, add it
-    allocatedRooms[year][month][day] = allocatedRooms[year][month][day] || {};
-
-    let currHour = hourStart
-    while (compareTimes(currHour, endTime, false)) {
-        debug && console.log("New Hour: " + currHour);
-
-        allocatedRooms[year][month][day][currHour] = allocatedRooms[year][month][day][currHour] || [];
-
-        allocatedRooms[year][month][day][currHour].push(roomName);
-
-        const [hours, minutes] = currHour.split(':').map(Number);
-        const newMinutes = (minutes + 30) % 60;
-        const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
-
-        debug && console.log("Minutes: " + minutes + " => " + newMinutes + " Hours: " + hours + " => " + newHours)
-        currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
-
-    }
-    debug && console.log(allocatedRooms['2022']['12']['02'])
-}
-
-/**
  * Checks if a room is available for a specified time slot on a given date.
  *
  * @param {string} roomName - The name of the room to check for availability.
@@ -644,31 +583,7 @@ function markAsUnavailable(roomName, date, startTime, endTime, debug) {
  * @param {boolean} debug - A flag indicating whether to print debug information.
  * @returns {boolean} Returns true if the room is available; otherwise, returns false.
  */
-function isRoomAvailable(roomName, date, startTime, endTime, debug){
-    const [day, month, year] = date.split('/');
-    let currHour = startTime.split(':').slice(0, 2).join(':');
-    debug && console.log("Day: "+day+" Month: "+month+" Year: "+year)
-    while (compareTimes(currHour, endTime)){
-        debug && console.log("CurrHour: "+currHour)
-        if (allocatedRooms[year] && allocatedRooms[year][month] && allocatedRooms[year][month][day] && allocatedRooms[year][month][day][currHour]) {
-            debug && console.log(allocatedRooms[year][month][day][currHour])
-            debug && console.log("Room Name: "+roomName)
 
-            if (allocatedRooms[year][month][day][currHour].includes(roomName)) {
-                return false;
-            }
-        }
-        const [hours, minutes] = currHour.split(':').map(Number);
-        const newMinutes = (minutes + 30) % 60;
-        const newHours = (hours + Math.floor((minutes + 30) / 60)) % 24;
-
-        debug && console.log("Minutes: " + minutes + " => " + newMinutes + " Hours: " + hours + " => " + newHours)
-        currHour = `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
-
-    }
-    return true
-
-}
 
 /**
  * Compare two time strings and return the result.
@@ -682,24 +597,6 @@ function isRoomAvailable(roomName, date, startTime, endTime, debug){
  * const result = compareTimes('12:30', '14:45', true);
  * console.log(result); // Output: -1
  */
-function compareTimes(time1, time2, debug) {
-    debug && console.log("Compare " + time1 + " " + time2)
-    // Convert times to minutes since midnight
-    const [hours1, minutes1] = time1.split(':').map(Number);
-    const [hours2, minutes2] = time2.split(':').map(Number);
-
-    const totalMinutes1 = hours1 * 60 + minutes1;
-    const totalMinutes2 = hours2 * 60 + minutes2;
-
-    // Compare the numeric values
-    if (totalMinutes1 < totalMinutes2) {
-        return -1;
-    } else if (totalMinutes1 > totalMinutes2) {
-        return 1;
-    } else {
-        return 0; // Times are equal
-    }
-}
 
 /**
  * Compares two objects based on their date and time properties.
@@ -743,78 +640,3 @@ function toggleLoading() {
         loadingCircle.style.display = 'none';
     }
 }
-
-function greedyAlg(roomsObjects, scheduleMapByDate){
-    const capacityMap = new Map();
-
-    roomsObjects.sort(compareByCapacidadeNormal)
-
-// Iterate through the objectsArray
-    roomsObjects.forEach((obj) => {
-        const capacity = obj["Capacidade Normal"];
-
-        // Check if the capacity key already exists in the hashmap
-        if (capacityMap.has(capacity)) {
-            // If yes, push the object to the existing array
-            capacityMap.get(capacity).push(obj);
-        } else {
-            // If no, create a new array with the object and set it as the value for the capacity key
-            capacityMap.set(capacity, [obj]);
-        }
-    });
-
-    const matches = []
-    for(const classesDay of scheduleMapByDate){
-        classesDay[1].forEach((cls) => {
-            const requiredCap = cls['Inscritos no turno']
-            const matchingRooms = getValuesForKey(capacityMap, requiredCap, cls["Dia"], cls["Início"], cls["Fim"])
-            if (matchingRooms && matchingRooms[0]){
-                cls["Sala da aula"] = matchingRooms[0]["Nome sala"]
-                cls["Lotação"] = matchingRooms[0]["Capacidade Normal"]
-                cls["Características reais da sala"] = matchingRooms[0]["Características"]
-                markAsUnavailable(matchingRooms[0]["Nome sala"],cls["Dia"], cls["Início"], cls["Fim"], false)
-            }
-            matches.push(cls)
-        })
-    }
-
-    printObjectsTable(matches, document.getElementById('result-match-container'), "Allocations Greedy")
-    displayCalendar(matches)
-
-    function compareByCapacidadeNormal(a, b) {
-        const capacidadeA = a["Capacidade Normal"];
-        const capacidadeB = b["Capacidade Normal"];
-
-        return capacidadeA - capacidadeB;
-    }
-    function getValuesForKey(map, searchKey, date, startTime, endTime) {
-
-        if (map.has(searchKey)) {
-            const values = map.get(searchKey)
-            const availableRooms = []
-            values.forEach((room) => {
-                if(isRoomAvailable(room["Nome sala"], date, startTime, endTime, true)){
-                    availableRooms.push(room)
-                }
-            })
-            return availableRooms;
-        } else {
-
-            let keys = Object(map.keys());
-            for (let key of keys) {
-                if (key > searchKey) {
-                    const values = map.get(key)
-                    const availableRooms = []
-                    values.forEach((room) => {
-
-                        if(isRoomAvailable(room["Nome sala"], date, startTime, endTime, true)){
-                            availableRooms.push(room)
-                        }
-                    })
-                    return availableRooms
-                }
-            }
-            }
-    }
-}
-

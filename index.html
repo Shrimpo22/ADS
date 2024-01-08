@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
-    <link rel="stylesheet" href="gui.css" />
+    <link rel="stylesheet" href="gui/gui.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
@@ -115,6 +115,10 @@
             <option value="YYYY/MM/DD">2023-01-31</option>
         </select>
     </div>
+    <div id="json--files">
+    <input type="file" id="fileInput" accept=".json" onchange="handleFile()">
+    <a id="downloadLink" style="display: none" download="ratices.json">Download JSON</a>
+    </div>
     <input type="submit" id="submitBtn" value="Submit Files">
 
 </form>
@@ -144,7 +148,11 @@
 
 <script src="https://unpkg.com/javascript-lp-solver/prod/solver.js"></script>
 <script src=index.js></script>
-<script src=gui.js></script>
+<script src=algorithms_workers/greedyAlg.js></script>
+<script src=gui/gui.js></script>
+<script src=algorithms_workers/readerWorker.js></script>
+<script src=algorithms_workers/greedyWorker.js></script>
+<script src=utilities/linkedList.js></script>
 </body>
 
 </html>

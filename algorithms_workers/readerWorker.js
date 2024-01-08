@@ -16,8 +16,6 @@ onmessage = function (event) {
     const objects = [];
 
     chunk.forEach((line, index) => {
-        if(csvFileName === 'HorarioDeExemplo.csv')
-            console.log("Line ", line," Index ", index)
         let eliminate = false;
 
         if (line === "") {
@@ -41,6 +39,7 @@ onmessage = function (event) {
 
         dateCols.forEach(i => {
             if (values[i] === "") {
+                console.log("HERE")
                 eliminate = true;
                 return;
             }
