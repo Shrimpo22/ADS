@@ -183,6 +183,7 @@ function saveConfigurations() {
         menu2_menu26Selection: document.getElementById("menu26Selection").value,
 
         separatorInput: document.getElementById('separatorInput').value,
+        maxRows: document.getElementById('maxRows').value
 
         // Add more configurations as needed
     };
@@ -253,11 +254,28 @@ function setSelectOption(id, value) {
     }
 }
 
+let menus = 0
 function showMenu(menuId, fileInput) {
     var menu = document.getElementById(menuId);
+
+    console.log("A",menus)
+
+
     if (fileInput.files.length > 0) {
+        menus++
+        if(menus===2){
+            console.log("HELLO")
+            const uploadJson = document.getElementById('fileInput');
+            uploadJson.style.display = 'block';
+        }
         menu.style.display = "block";
     } else {
+        menus--
+        if(menus<2){
+            console.log("HELLO")
+            const uploadJson = document.getElementById('fileInput');
+            uploadJson.style.display = 'none';
+        }
         menu.style.display = "none";
     }
 }

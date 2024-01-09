@@ -24,9 +24,9 @@ const scheduleCSV = document.getElementById("scheduleCSV");
  */
 var separatorInput
 
+var maxRowsToDisplay = 0;
+
 let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
-
-
 
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
@@ -37,7 +37,8 @@ function loadConfigurations() {
         document.getElementById('check3').checked = configurations.check3;
         document.getElementById('timeFormatSelector').value = configurations.timeFormat;
         document.getElementById('dayFormatSelector').value = configurations.dayFormat;
-        document.getElementById('separatorInput').value = configurations.separatorInput
+        document.getElementById('separatorInput').value = configurations.separatorInput;
+        document.getElementById('maxRows').value = configurations.maxRows
         // Set more configurations as needed
     }
 }
@@ -68,6 +69,13 @@ csvForm.addEventListener("submit", function (e) {
 
     var timeFormat = document.getElementById("timeFormatSelector").value;
     var dayFormat = document.getElementById("dayFormatSelector").value;
+
+    maxRowsToDisplay = document.getElementById("maxRows").value
+    if (maxRowsToDisplay === ""){
+        alert("Error: Max Rows to Display is Blank! Please choose a number.");
+        // Do not proceed with form submission
+        return;
+    }
 
     if (separatorInput === '') {
         alert("Error: A separator hasn't been given. Please enter one");
@@ -407,19 +415,25 @@ function printObjectsTable(objObjects, title) {
         th.textContent = key;
         headerRow.appendChild(th);
     });
+
     thead.appendChild(headerRow);
     table.appendChild(thead);
     tableDiv.appendChild(table)
     // Create the table body
     const tbody = document.createElement('tbody');
+
+    let itTemp = 0
     objObjects.forEach(obj => {
-        const row = document.createElement('tr');
-        allKeys.forEach(key => {
-            const cell = document.createElement('td');
-            cell.textContent = obj[key] || ''; // Handle cases where a key is not present in an object
-            row.appendChild(cell);
-        });
-        tbody.appendChild(row);
+        if(itTemp < maxRowsToDisplay) {
+            const row = document.createElement('tr');
+            allKeys.forEach(key => {
+                const cell = document.createElement('td');
+                cell.textContent = obj[key] || ''; // Handle cases where a key is not present in an object
+                row.appendChild(cell);
+            });
+            tbody.appendChild(row);
+            itTemp++;
+        }
     });
     table.appendChild(tbody);
 

@@ -26,7 +26,7 @@
 <body>
 <form id="csvForm">
     <div class="json--files">
-        <input type="file" id="fileInput" accept=".json" onchange="handleFile()">
+        <input type="file" style="display: none" id="fileInput" accept=".json" onchange="handleFile()">
 
 
         <a id="downloadLink" style="display: none" download="ratices.json"><i class="fa-solid fa-file-arrow-down"></i></a>
@@ -129,6 +129,10 @@
                 <option value="YYYY/MM/DD">2023/01/31</option>
                 <option value="YYYY/MM/DD">2023-01-31</option>
             </select>
+        </div>
+        <div class="option">
+            <label for="maxRows">Choose the maximum rows of the csvs to display.</label>
+            <input id="maxRows" type="number">
         </div>
     </div>
 
