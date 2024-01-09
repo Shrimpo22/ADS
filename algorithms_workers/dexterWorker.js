@@ -1,20 +1,45 @@
-const allocatedRooms = {}
+
+
 onmessage = function (e) {
+    console.log("Hello!")
+    const allocatedRooms = {}
+    var nrOverCapCounter = 0;
+    var nrStuOverCapCounter = 0;
+    var withouthCaracCounter = 0;
+    var withouthRoomCounter = 0;
+    var caracWastedCounter = 0;
+    var capWastedCounter = 0;
+    var caracNotFulfilledCounter = 0;
+
     const { scheduleForDay, capacityMap} = e.data;
 
     const matches = [];
     scheduleForDay.forEach((cls) => {
         const requiredCap = cls['Inscritos no turno'];
-        const matchingRooms = getValuesForKey(
+        let matchingRooms = getValuesForKey(
             capacityMap,
             requiredCap,
             cls["Dia"],
             cls["Início"],
             cls["Fim"],
-            cls["Curso"]
+            'higher'
         );
 
+        if(!matchingRooms || !matchingRooms[0]){
+            matchingRooms = getValuesForKey(
+                capacityMap,
+                requiredCap,
+                cls["Dia"],
+                cls["Início"],
+                cls["Fim"],
+                'lower'
+            );
+        }
+
         if (matchingRooms && matchingRooms[0]) {
+            let carac = false
+
+
             cls["Sala da aula"] = matchingRooms[0]["Nome sala"];
             cls["Lotação"] = matchingRooms[0]["Capacidade Normal"];
             cls["Características reais da sala"] = matchingRooms[0]["Características"];
@@ -25,15 +50,48 @@ onmessage = function (e) {
                 cls["Fim"],
                 false
             );
+
+            for ( const requirement of cls['Características da sala pedida para a aula']){
+                if (matchingRooms[0]['Características'].includes(requirement)) {
+                    carac = true
+                    caracNotFulfilledCounter ++
+                } else{
+                    caracWastedCounter ++
+                }
+            }
+            if(carac === false)
+                withouthCaracCounter ++
+
+
+            const difference = matchingRooms[0]["Capacidade Normal"] - cls['Inscritos no turno']
+            if(difference > 0)
+                capWastedCounter += matchingRooms[0]["Capacidade Normal"] - cls['Inscritos no turno']
+            else{
+                nrOverCapCounter ++
+                nrStuOverCapCounter += Math.abs(difference)
+            }
+
+
+        } else {
+            withouthRoomCounter ++;
         }
+
+
         matches.push(cls);
     });
 
-    postMessage({ matches });
+    postMessage({ matches,  nrOverCapCounter,
+        nrStuOverCapCounter,
+        withouthCaracCounter,
+        withouthRoomCounter,
+        caracWastedCounter,
+        caracNotFulfilledCounter,
+        capWastedCounter
+    });
 
 
 
-    function getValuesForKey(map, searchKey, date, startTime, endTime, c) {
+    function getValuesForKey(map, searchKey, date, startTime, endTime, sign) {
         if (map.has(searchKey)) {
 
             const values = map.get(searchKey);
@@ -48,17 +106,42 @@ onmessage = function (e) {
         } else {
 
             let keys = Object(map.keys());
-            for (let key of keys) {
-                if (Number(key) > searchKey) {
-                    const values = map.get(key);
-                    const availableRooms = [];
-                    values.forEach((room) => {
-                        if (isRoomAvailable(room["Nome sala"], date, startTime, endTime, false)) {
-                            availableRooms.push(room);
-                        }
-                    });
-                    return availableRooms;
+
+            if(sign === 'higher'){
+
+                for (let key of keys) {
+                    if (Number(key) > searchKey) {
+                        const values = map.get(key);
+                        const availableRooms = [];
+                        values.forEach((room) => {
+                            if (isRoomAvailable(room["Nome sala"], date, startTime, endTime, false)) {
+                                availableRooms.push(room);
+                            }
+                        });
+                        return availableRooms;
+                    }
                 }
+            }else if(sign === 'lower'){
+                const tempArray = []
+                for (const key of keys) {
+                    tempArray.push([Number(key), key])
+                }
+                tempArray.sort((a, b) => Number(b[0]) - Number(a[0]))
+                for (let key of tempArray) {
+                    if (key[0] < searchKey) {
+                        const values = map.get(key[1]);
+                        const availableRooms = [];
+                        values.forEach((room) => {
+                            if (isRoomAvailable(room["Nome sala"], date, startTime, endTime, false)) {
+                                availableRooms.push(room);
+                            }
+                        });
+                        if(availableRooms.length > 0 ) {
+                            return availableRooms;
+                        }
+                    }
+                }
+                return []
             }
         }
     }

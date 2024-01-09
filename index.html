@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-    <title>ADHD</title>
+    <title>G06 Rooms to Events</title>
     <style>
 
 
@@ -53,7 +53,7 @@
             <label for="menu12Selection">Room Name:</label>
             <select id="menu12Selection">
             </select>
-            <label for="menu13Selection">Room Characteristics First Column:</label>
+            <label for="menu13Selection">Room Building:</label>
             <select id="menu13Selection">
             </select>
             <label for="menu14Selection">Room Characteristics Last Column:</label>
@@ -87,9 +87,9 @@
     <div class="alg--choose">
         <label>Choose the algorithms to use!</label>
         <ul>
-            <li><input type="checkbox" id="check1" name="check1"> Greedy Capacity</li>
-            <li><input type="checkbox" id="check2" name="check2"> Ratatouille </li>
-            <li><input type="checkbox" id="check3" name="check3"> Option 3</li>
+            <li><input type="checkbox" id="check1" name="check1"> Aldrich</li>
+            <li><input type="checkbox" id="check2" name="check2"> Dexter </li>
+            <li><input type="checkbox" id="check3" name="check3"> Ratatouille</li>
         </ul>
     </div>
 
@@ -166,7 +166,7 @@
         });
     </script>
     <br>
-    <h1>Who made the project!</h1>
+    <h1>Who made the project ?</h1>
     <div class="github-container">
 
         <div class="github-profile">
@@ -180,16 +180,14 @@
         </a>
             <div class="username">Flávio Martins</div>
         </div>
-
         <div class="github-profile">
         <a href="https://github.com/moonzn" target="_blank" class="github-button" id="button3">
         </a>
             <div class="username">Raúl Nascimento</div>
 
         </div>
-
         <div class="github-profile">
-        <a href="https://github.com/francismc" target="_blank" class="github-button" id="button4">
+        <a href="https://github.com/francismsc" target="_blank" class="github-button" id="button4">
         </a>
             <div class="username">Francisco Costa</div>
 
@@ -201,10 +199,12 @@
 
 <script src="https://unpkg.com/javascript-lp-solver/prod/solver.js"></script>
 <script src=index.js></script>
-<script src=algorithms_workers/greedyAlg.js></script>
+<script src=algorithms_workers/aldrich.js></script>
+<script src=algorithms_workers/dexter.js></script>
 <script src=gui/gui.js></script>
 <script src=algorithms_workers/readerWorker.js></script>
-<script src=algorithms_workers/greedyWorker.js></script>
+<script src=algorithms_workers/aldrichWorker.js></script>
+<script src=algorithms_workers/dexterWorker.js></script>
 <script src=algorithms_workers/remyCooker.js></script>
 <script src=algorithms_workers/ratatouille.js></script>
 <script src=utilities/linkedList.js></script>

@@ -57,7 +57,7 @@ function runRatAlgorithmForDay(dayIndex) {
             startNextRatWorker();
         } else {
             ratWorkerPool.forEach(remy => remy.terminate())
-            printObjectsTable(ratMainMatches, "Let Remy Cook")
+            printObjectsTable(ratMainMatches, "Ratatouille Allocations")
             displayCalendar(ratMainMatches,2)
         }
     };

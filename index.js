@@ -28,6 +28,9 @@ var maxRowsToDisplay = 0;
 
 let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
 
+let roomsTotal = 0
+let classesTotal = 0
+
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
 
@@ -64,8 +67,8 @@ csvForm.addEventListener("submit", function (e) {
 
 // Retrieve values from checkboxes
     var greedyCheck = document.getElementById("check1").checked;
-    var ratCheck = document.getElementById("check2").checked;
-    var lpCheck = document.getElementById("check3").checked;
+    var highlowCheck = document.getElementById("check2").checked;
+    var ratCheck = document.getElementById("check3").checked;
 
     var timeFormat = document.getElementById("timeFormatSelector").value;
     var dayFormat = document.getElementById("dayFormatSelector").value;
@@ -98,7 +101,7 @@ csvForm.addEventListener("submit", function (e) {
     const roomVariablesMap = {};
     roomVariablesMap[document.getElementById("menu1Selection").value] = "Capacidade Normal";
     roomVariablesMap[document.getElementById("menu12Selection").value] = "Nome sala";
-    //roomVariablesMap[document.getElementById("menu13Selection").value] = "Characteristics First Column";
+    roomVariablesMap[document.getElementById("menu13Selection").value] = "Edifício";
     //roomVariablesMap[document.getElementById("menu14Selection").value] = "Characteristics Last Column";
 
 // HashMap for ucs variables
@@ -118,6 +121,7 @@ csvForm.addEventListener("submit", function (e) {
 
     Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
+            console.log("Read")
             if (roomsObjects.length === 0 || scheduleObjects.length === 0) {
                 alert("One of the csv files is possibly blank or missing required columns!")
                 isLoading = 0
@@ -128,6 +132,9 @@ csvForm.addEventListener("submit", function (e) {
 
             printObjectsTable(roomsObjects, rooms_input.name)
             printObjectsTable(scheduleObjects, schedule_input.name)
+            roomsTotal = roomsObjects.slice(1).length
+            classesTotal = scheduleObjects.slice(1).length
+
 
             const objectsByDateMap = new Map();
 
@@ -199,8 +206,12 @@ csvForm.addEventListener("submit", function (e) {
             //     } )
             // })
 
-            if (greedyCheck)
-                greedyAlg(roomsObjects, objectsByDateMap)
+            if (greedyCheck) {
+                aldrich(roomsObjects, objectsByDateMap)
+            }
+            if(highlowCheck) {
+                dexter(roomsObjects, objectsByDateMap)
+            }
             if (ratCheck)
                 ratatouille(roomsObjects, objectsByDateMap, false)
             isLoading = 0
@@ -377,7 +388,10 @@ function findConflictingClasses(classes, debug) {
  * @param {Array<Object>} objObjects - Array of objects to be displayed.
  * @param {HTMLElement} resultContainer - HTML element to display the table.
  */
-function printObjectsTable(objObjects, title) {
+function printObjectsTable(objObjects, title, score) {
+
+
+
     const resultContainer = document.createElement('div')
     resultContainer.classList.add("box")
     // Check if there are rooms to display
@@ -525,7 +539,6 @@ function displayCalendar(events, i){
     const calendarDiv = document.createElement('div')
     calendarDiv.id = calendarName
     calendarContainerDiv.appendChild(calendarDiv)
-    console.log("cn ", calendarName, " cd ", calendarDiv, " ce ", calendarContainerDiv)
     calendarContainerDiv.style.display = 'flex';
     document.getElementById("display-area").appendChild(calendarContainerDiv)
 

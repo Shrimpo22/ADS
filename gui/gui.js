@@ -258,13 +258,10 @@ let menus = 0
 function showMenu(menuId, fileInput) {
     var menu = document.getElementById(menuId);
 
-    console.log("A",menus)
-
 
     if (fileInput.files.length > 0) {
         menus++
         if(menus===2){
-            console.log("HELLO")
             const uploadJson = document.getElementById('fileInput');
             uploadJson.style.display = 'block';
         }
@@ -272,7 +269,6 @@ function showMenu(menuId, fileInput) {
     } else {
         menus--
         if(menus<2){
-            console.log("HELLO")
             const uploadJson = document.getElementById('fileInput');
             uploadJson.style.display = 'none';
         }

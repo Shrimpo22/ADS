@@ -7,21 +7,30 @@ let capacityMap = []
 const mainMatches = []
 let currDay = 0
 
-function greedyAlg(roomsObjects, schDate) {
+
+var greedyNrOverCap = 0;
+var greedyNrStuOverCap = 0;
+var greedyWithouthCarac = 0;
+var greedyWithouthRoom = 0;
+var greedyCaracWasted = 0;
+var greedyCapWasted = 0;
+var greedyCaracNotFulfilled = 0;
+
+function aldrich(roomsObjects, schDate) {
     workerPool = new LinkedList()
     scheduleMapByDate = new Map()
     capacityMap = new Map()
 
     // Initialize the worker pool
     for (let i = 0; i < MAX_CONCURRENT_WORKERS; i++) {
-        const worker = new Worker('algorithms_workers/greedyWorker.js');
+        const worker = new Worker('algorithms_workers/aldrichWorker.js');
         workerPool.push(worker);
     }
 
     scheduleMapByDate = schDate
     totalDays = scheduleMapByDate.size
 
-    roomsObjects.sort(compareByCapacidadeNormal);
+    roomsObjects.sort(gdcompareByCapacidadeNormal);
 
     // Iterate through the objectsArray
     roomsObjects.forEach((obj) => {
@@ -37,9 +46,9 @@ function greedyAlg(roomsObjects, schDate) {
         }
     });
 
-    startNextWorker()
+    gdstartNextWorker()
 
-    function compareByCapacidadeNormal(a, b) {
+    function gdcompareByCapacidadeNormal(a, b) {
         const capacidadeA = a["Capacidade Normal"];
         const capacidadeB = b["Capacidade Normal"];
 
@@ -51,7 +60,7 @@ function greedyAlg(roomsObjects, schDate) {
     // displayCalendar(matches)
 }
 
-function runAlgorithmForDay(dayIndex) {
+function gdrunAlgorithmForDay(dayIndex) {
     const worker = workerPool.pop();
 
     let i=0
@@ -72,7 +81,21 @@ function runAlgorithmForDay(dayIndex) {
     worker.postMessage(data);
 
     worker.onmessage = function (e) {
-        const { matches } = e.data;
+        const { matches, nrOverCapCounter,
+            nrStuOverCapCounter,
+            withouthCaracCounter,
+            withouthRoomCounter,
+            caracWastedCounter,
+            caracNotFulfilledCounter,
+            capWastedCounter } = e.data;
+
+        highLowNrOverCap += Number(nrOverCapCounter);
+        highLowNrStuOverCap += Number(nrStuOverCapCounter);
+        highLowWithouthCarac += Number(withouthCaracCounter);
+        highLowWithouthRoom += Number(withouthRoomCounter)
+        highLowCaracWasted += Number(caracWastedCounter)
+        highLowCaracNotFulfilled += Number(caracNotFulfilledCounter)
+        highLowCapWasted += Number(capWastedCounter)
 
         matches.forEach(m => mainMatches.push(m))
 
@@ -81,17 +104,23 @@ function runAlgorithmForDay(dayIndex) {
         currDay++
         // Start a new worker if there are more days to process
         if (currDay < totalDays - 1) {
-            startNextWorker();
+            gdstartNextWorker();
         }else {
+            const score = {"nrOverCap":highLowNrOverCap, "nrStuOverCap": highLowNrStuOverCap,  "withouthCarac": highLowWithouthCarac,
+                "withouthRoom":highLowWithouthRoom , "caracWasted":highLowCaracWasted, "caracNotFulfilled":highLowCaracNotFulfilled, "capWasted":highLowCapWasted }
+
             workerPool.forEach(worker => worker.terminate())
-            printObjectsTable(mainMatches, "Greedy Allocation")
+            printObjectsTable(mainMatches, "Greedy Allocations", score)
             displayCalendar(mainMatches, 1)
         }
     };
+    worker.onerror = function (){
+        console.log("GREEDSERROR")
+    }
 }
 
-function startNextWorker() {
+function gdstartNextWorker() {
     if (workerPool.peek())
-        runAlgorithmForDay(currDay);
+        gdrunAlgorithmForDay(currDay);
 
 }
