@@ -19,12 +19,18 @@
 </head>
 
 <header>
-    <h1>WHERE WE DROPIN' BOYS?!</h1>
+    <h1>G06 ADS Allocate Rooms to Events!</h1>
 </header>
 
 
 <body>
 <form id="csvForm">
+    <div class="json--files">
+        <input type="file" id="fileInput" accept=".json" onchange="handleFile()">
+
+
+        <a id="downloadLink" style="display: none" download="ratices.json"><i class="fa-solid fa-file-arrow-down"></i></a>
+    </div>
     <div class="container">
         <div class="drop-zone" id="dropZone1">
             <span class="drop-zone__prompt">Drop <span style="color: #246BA9; font-weight: bold; font-size: larger;">rooms</span> file here or click to upload</span>
@@ -89,7 +95,7 @@
 
     <div class="file--options">
         <div class="option">
-            <label for="separatorInput">Enter CSV Separator:</label>
+            <label for="separatorInput">Enter CSV Separator that's used in both files:</label>
             <select id="separatorInput" >
                 <option value=",">Comma (,)</option>
                 <option value=";">Semicolon (;)</option>
@@ -125,26 +131,67 @@
             </select>
         </div>
     </div>
-    <div class="json--files">
-        <input type="file" id="fileInput" accept=".json" onchange="handleFile()">
-        <i class="fa-solid fa-file-csv"></i>
 
-        <a id="downloadLink" style="display: none" download="ratices.json">Download JSON</a>
-    </div>
     <input type="submit" id="submitBtn" value="Submit Files">
 
 </form>
 
-<div class="loader" id="loadingCircle" style="display: none"></div>
-
 <div id="display-area">
 </div>
-
+<div class="loader" id="loadingCircle" style="display: none"></div>
 
 
 
 
 <footer>
+    <script>
+        // Fetch GitHub profile images dynamically using GitHub API
+        const usernames = ['Shrimpo22', 'Pu4DinFL7', 'moonzn', 'francismsc'];
+
+        usernames.forEach((username, index) => {
+            fetch(`https://api.github.com/users/${username}`)
+                .then(response => response.json())
+                .then(data => {
+                    const button = document.getElementById(`button${index + 1}`);
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = `GitHub Profile ${index + 1}`;
+                    button.appendChild(img);
+                })
+                .catch(error => console.error('Error fetching GitHub profile:', error));
+        });
+    </script>
+    <br>
+    <h1>Who made the project!</h1>
+    <div class="github-container">
+
+        <div class="github-profile">
+        <a href="https://github.com/Shrimpo22" target="_blank" class="github-button" id="button1">
+        </a>
+            <div class="username">Vasco Araújo</div>
+        </div>
+        <div class="github-profile">
+        <a href="https://github.com/Pu4DinFL7" target="_blank" class="github-button" id="button2">
+
+        </a>
+            <div class="username">Flávio Martins</div>
+        </div>
+
+        <div class="github-profile">
+        <a href="https://github.com/moonzn" target="_blank" class="github-button" id="button3">
+        </a>
+            <div class="username">Raúl Nascimento</div>
+
+        </div>
+
+        <div class="github-profile">
+        <a href="https://github.com/francismc" target="_blank" class="github-button" id="button4">
+        </a>
+            <div class="username">Francisco Costa</div>
+
+        </div>
+
+    </div>
     <p>&copy; 2024 Ratices Lda. All rights reserved.</p>
 </footer>
 

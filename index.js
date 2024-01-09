@@ -374,7 +374,8 @@ function printObjectsTable(objObjects, title) {
     resultContainer.classList.add("box")
     // Check if there are rooms to display
     if (objObjects.length === 0) {
-        resultContainer.innerHTML = '<p>No rooms available</p>';
+        resultContainer.innerHTML = '<p>Nothing to display <i class="fa-solid fa-face-sad-tear" style="color: white"></i></p>';
+        document.getElementById('display-area').appendChild(resultContainer)
         return;
     }
 
@@ -478,8 +479,14 @@ function printObjectsTable(objObjects, title) {
 }
 
 function displayCalendar(events, i){
-    console.log("Here ", i)
+    const calendarContainerDiv = document.createElement('div')
+    calendarContainerDiv.classList.add('box')
 
+    if (events.length === 0) {
+        calendarContainerDiv.innerHTML = '<p>Nothing to display <i class="fa-solid fa-face-sad-tear" style="color: white"></i></p>';
+        document.getElementById('display-area').appendChild(calendarContainerDiv)
+        return;
+    }
     var convertedEvents = events.map(function(event) {
 
         var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
@@ -499,8 +506,7 @@ function displayCalendar(events, i){
     });
 
     const calendarName = `calendar${i}`
-    const calendarContainerDiv = document.createElement('div')
-    calendarContainerDiv.classList.add('box')
+
     calendarContainerDiv.id=`calendar-container${i}`
     const calendarDiv = document.createElement('div')
     calendarDiv.id = calendarName

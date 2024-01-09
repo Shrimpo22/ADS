@@ -35,6 +35,10 @@
     font-size: 30px;
     color:white;
 }
+.fa-file-arrow-down{
+    font-size: 30px;
+    color:white;
+}
 
 
 
@@ -149,6 +153,49 @@ footer {
     width: auto;
 }
 
+.github-container {
+    width: 35%;
+    margin: 20px auto 15px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.github-button {
+    display: inline-block;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    filter: grayscale(100%); /* Initial grayscale effect */
+    transition: filter 0.3s ease-in-out;
+}
+
+.github-button:hover {
+    filter: grayscale(0%); /* Remove grayscale on hover */
+}
+
+.github-button img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+.username {
+    margin: 5px auto;
+    text-align: center;
+    color: white;
+    font-size: 15px;
+    font-weight: bold ;
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.3s ease-in-out;
+}
+
+.github-profile:hover .username {
+    opacity: 1; /* Show username on hover */
+}
+
 form {
     align-items: center;
     display: flex;
@@ -192,6 +239,53 @@ form {
     border-radius: 10px;
 }
 
+
+.json--files a {
+    border: none;
+    border-radius: 5px;
+    margin-left: auto;
+    background-color: var(--button-bg-color); /* Set the background color */
+    color: #fff; /* Set the text color */
+    padding: 10px 15px; /* Adjust padding for the button size */
+
+    /* You can use a background image for the icon */
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.json--files a:hover {
+    background-color: var(--header-bg-color); /* Change the background color on hover */
+}
+
+
+.upload-btn {
+    display: inline-block;
+    padding: 10px;
+    border: 3px solid var(--table-border-color);
+    border-radius: 10px;
+    background-color: var(--box-bg-color);
+    color: #333;
+    cursor: pointer;
+}
+
+.upload-btn span {
+    font-size: 15px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+
+.json--files #fileInput{
+    padding: 10px;
+    background-color: var(--button-bg-color);
+    color: white;
+    border-radius: 10px;
+}
+
+.json--files #fileInput:hover{
+    background-color: #0D28C2;
+}
+
 .menu {
     width: auto;
     height: auto;
@@ -202,6 +296,30 @@ form {
     color: var(--box-text-color);
     border: 4px solid var(--accent-color);
     border-radius: 10px;
+}
+
+.json--files{
+ display: flex;
+    flex-direction: row;
+    margin-top: 20px;
+    width: 90%;
+}
+
+.json--files a {
+    border: none;
+    border-radius: 5px;
+    margin-left: auto;
+    background-color: var(--button-bg-color); /* Set the background color */
+    color: #fff; /* Set the text color */
+    padding: 10px 15px; /* Adjust padding for the button size */
+
+    /* You can use a background image for the icon */
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.json--files a:hover {
+    background-color: var(--header-bg-color); /* Change the background color on hover */
 }
 
 .file--options{
