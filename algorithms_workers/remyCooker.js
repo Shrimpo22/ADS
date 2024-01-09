@@ -12,7 +12,7 @@ onmessage = function (e) {
         const requirementsList = so['Características da sala pedida para a aula']
 
         const matchingRooms = roomsObjects
-            .filter(ro => ro['Capacidade Normal'] >= requiredCapacity)
+            .filter(ro => Number(ro['Capacidade Normal']) >= requiredCapacity)
             .filter(ro => {
                 // Check room availability for the specified date and time range
                 return isRoomAvailable(

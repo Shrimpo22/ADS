@@ -2,13 +2,14 @@
     --header-bg-color: #0D28C2;
     --header-text-color: #fff;
     --accent-color: #0046BE;
-    --box-bg-color: #bde2f6;
+    --box-bg-color: #d4eeff;
     --box-text-color: #03396C;
-    --button-bg-color: #5289b7;
+    --button-bg-color: #3498db;
     --button-hover-color: #0D28C2;
     --containers-color: #d0e2f8;
     --table-border-color: #061a8c;
-    --table-bg-color: #ffffff
+    --table-bg-color: #ffffff;
+    --bold-color: #246BA9
 }
 
 .box {
@@ -25,24 +26,63 @@
 }
 
 
+.header-container{
+    display: flex;
+    flex-direction: row;
+}
+
+.fa-file-csv{
+    font-size: 30px;
+    color:white;
+}
+
+
+
+.header-container button {
+    border: none;
+    border-radius: 5px;
+    margin-left: auto;
+    background-color: var(--button-bg-color); /* Set the background color */
+    color: #fff; /* Set the text color */
+    padding: 10px 15px; /* Adjust padding for the button size */
+
+    /* You can use a background image for the icon */
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.header-container button:hover {
+    background-color: var(--header-bg-color); /* Change the background color on hover */
+}
+
 .fc-view-container{
     background-color: white;
 }
 
 .box .title{
+    margin-top: auto;
+    position: relative;
+    bottom: 0;
     text-align: left;
     font-weight: bolder;
     font-size: 25px;
     color: var(--header-bg-color);
+
 }
 
-.table-container {
+.table-container{
+    overflow: auto;
+    margin-top: 10px;
+}
+
+.table-container table{
     border-radius: 10px;
     width: 100%;
     border-collapse: collapse;
     border: 1px solid var(--table-border-color);
     background-color: var(--table-bg-color);
-    margin-top: 15px;
+    overflow: auto;
+    max-height: 100%;
 }
 
 .table-container th,
@@ -110,6 +150,7 @@ footer {
 }
 
 form {
+    align-items: center;
     display: flex;
     flex-direction: column;
     margin: 25px auto;
@@ -161,6 +202,87 @@ form {
     color: var(--box-text-color);
     border: 4px solid var(--accent-color);
     border-radius: 10px;
+}
+
+.file--options{
+    justify-content: space-evenly;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    height: 100px;
+  /* Set a minimum width */
+    padding: 25px;
+    background-color: var(--box-bg-color);
+    color: var(--box-text-color);
+    border: 4px solid var(--accent-color);
+    border-radius: 10px;
+}
+
+.alg--choose{
+    justify-content: space-evenly;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    height: 5vh;
+    /* Set a minimum width */
+    padding: 25px;
+    background-color: var(--box-bg-color);
+    color: var(--box-text-color);
+    border: 4px solid var(--accent-color);
+    border-radius: 10px;
+}
+
+.alg--choose label{
+    font-weight: bolder;
+    font-size: 20px;
+    color: var(--bold-color);
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+.alg--choose ul{
+    padding-left: 10px;
+    align-self: center;
+    height: 100%;
+    width: 90%;
+    justify-content: space-evenly;
+    display: flex;
+    flex-direction: row;
+}
+
+.alg--choose ul li{
+    display: flex;
+    flex-direction: row;
+}
+.alg--choose ul li input{
+    cursor:pointer;
+}
+
+
+.file--options .option{
+    display: flex;
+    flex-direction: row;
+    text-align: left;
+}
+
+.option select{
+    cursor: pointer;
+    margin-left: auto;
+}
+
+select {
+    border: 2px solid var(--header-bg-color); /* Set the border color to blue */
+    background-color: var(--button-bg-color);
+    border-radius: 5px;
+    width: 120px;
+    padding-left: 5px;
+    text-align: left;
+    color: white; /* Set the text color to blue */
+    /* Add any other styling you want for the select boxes */
 }
 
 .menu label {

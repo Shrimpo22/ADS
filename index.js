@@ -22,7 +22,7 @@ const scheduleCSV = document.getElementById("scheduleCSV");
  * Object to store allocatedRooms data.
  * @type {Object}
  */
-
+var separatorInput
 
 let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
 
@@ -59,12 +59,12 @@ csvForm.addEventListener("submit", function (e) {
     var ucCharacNeededCol = document.getElementById("menu25Selection").value;
     var ucNameCol = document.getElementById("menu26Selection").value;
 
-    var separatorInput = document.getElementById('separatorInput').value;
+    separatorInput = document.getElementById('separatorInput').value;
 
 // Retrieve values from checkboxes
-    var check1ValueCol = document.getElementById("check1").checked;
-    var check2ValueCol = document.getElementById("check2").checked;
-    var check3ValueCol = document.getElementById("check3").checked;
+    var greedyCheck = document.getElementById("check1").checked;
+    var ratCheck = document.getElementById("check2").checked;
+    var lpCheck = document.getElementById("check3").checked;
 
     var timeFormat = document.getElementById("timeFormatSelector").value;
     var dayFormat = document.getElementById("dayFormatSelector").value;
@@ -83,6 +83,7 @@ csvForm.addEventListener("submit", function (e) {
     }
 
     alert("Form submitted successfully!");
+    document.getElementById('display-area').innerHTML=''
 
     saveConfigurations()
 
@@ -104,23 +105,21 @@ csvForm.addEventListener("submit", function (e) {
     const rooms_input = roomsCSV.files[0];
     const schedule_input = scheduleCSV.files[0];
 
+    isLoading = 1
     toggleLoading()
 
     Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
-            if (roomsObjects.length === 0 || scheduleObjects.length === 0  ){
+            if (roomsObjects.length === 0 || scheduleObjects.length === 0) {
                 alert("One of the csv files is possibly blank or missing required columns!")
-                isLoading=0
+                isLoading = 0
                 toggleLoading()
                 return
 
             }
-            const resultRoomsContainer = document.getElementById('result-rooms-container');
-            const resultScheduleContainer = document.getElementById('result-schedule-container');
-            const resultLPContainer = document.getElementById('result-match-container');
 
-            printObjectsTable(roomsObjects, resultRoomsContainer, rooms_input.name)
-            printObjectsTable(scheduleObjects, resultScheduleContainer, schedule_input.name)
+            printObjectsTable(roomsObjects, rooms_input.name)
+            printObjectsTable(scheduleObjects, schedule_input.name)
 
             const objectsByDateMap = new Map();
 
@@ -138,7 +137,7 @@ csvForm.addEventListener("submit", function (e) {
                 }
             });
 
-            const matches =[]
+            const matches = []
             const workers = [];
             let workersCount = 0;
             const results = [];
@@ -192,69 +191,22 @@ csvForm.addEventListener("submit", function (e) {
             //     } )
             // })
 
-            //greedyAlg(roomsObjects, objectsByDateMap)
-            ratatouille(roomsObjects, objectsByDateMap, false)
-            isLoading=0
+            if (greedyCheck)
+                greedyAlg(roomsObjects, objectsByDateMap)
+            if (ratCheck)
+                ratatouille(roomsObjects, objectsByDateMap, false)
+            isLoading = 0
             toggleLoading()
 
         })
         .catch(error => {
-            alert("Error reading "+error)
-            isLoading=0
+            alert("Error reading " + error)
+            isLoading = 0
             toggleLoading()
         });
 
 });
 
-function displayCalendar(events){
-
-    var convertedEvents = events.map(function(event) {
-
-        var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
-        var endDateTime = moment(event.Dia + ' ' + event.Fim, 'DD/MM/YYYY HH:mm:ss');
-
-        let subTitle = "No Room Allocated!"
-        if(event["Sala da aula"])
-            subTitle = event["Sala da aula"]
-
-        return {
-            title: event["Unidade de execução"],
-            subtitle: subTitle,
-            start: startDateTime.format(),
-            end: endDateTime.format()
-
-        };
-    });
-
-    $('#calendar').fullCalendar({
-        header: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'month,agendaWeek,agendaDay,listWeek,year'
-        },
-        defaultView: 'month', // Set the default view to month
-        events: convertedEvents, // Pass your converted events here
-        locale: 'pt', // Set the locale to Portuguese
-        timeFormat: 'HH:mm',
-        buttonText: {
-            today: 'Hoje',
-            month: 'Mês',
-            week: 'Semana',
-            day: 'Dia',
-            list: 'Lista',
-            year: 'Ano' // Added translation for 'year'
-        },
-        eventRender: function (event, element) {
-            // Add subtitle to event element
-            if (event.subtitle) {
-                element.append('<div class="fc-subtitle">' + event.subtitle + '</div>');
-            }
-        }
-        // Additional options can be added here
-    });
-
-    document.getElementById('calendar-container').style.display = 'flex';
-}
 
 /**
  * Reads a CSV file and creates objects based on its content.
@@ -412,24 +364,14 @@ function findConflictingClasses(classes, debug) {
 }
 
 /**
- * Assigns rooms to classes based on specified criteria.
- *
- * @param {Array<Object>} roomsObjects - Array of room objects.
- * @param {Array<Object>} scheduleObjects - Array of schedule objects.
- * @param {boolean} debug - Flag to enable debugging output.
- */
-/*
-* WIP -Work In Progress
-* */
-
-
-/**
  * Prints a table of objects to a specified result container.
  *
  * @param {Array<Object>} objObjects - Array of objects to be displayed.
  * @param {HTMLElement} resultContainer - HTML element to display the table.
  */
-function printObjectsTable(objObjects, resultContainer, title) {
+function printObjectsTable(objObjects, title) {
+    const resultContainer = document.createElement('div')
+    resultContainer.classList.add("box")
     // Check if there are rooms to display
     if (objObjects.length === 0) {
         resultContainer.innerHTML = '<p>No rooms available</p>';
@@ -452,7 +394,8 @@ function printObjectsTable(objObjects, resultContainer, title) {
 
     // Create the table element
     const table = document.createElement('table');
-    table.classList.add('table-container');
+    const tableDiv = document.createElement("div")
+    tableDiv.classList.add('table-container');
 
     // Create the table header
     const thead = document.createElement('thead');
@@ -465,7 +408,7 @@ function printObjectsTable(objObjects, resultContainer, title) {
     });
     thead.appendChild(headerRow);
     table.appendChild(thead);
-
+    tableDiv.appendChild(table)
     // Create the table body
     const tbody = document.createElement('tbody');
     objObjects.forEach(obj => {
@@ -481,35 +424,121 @@ function printObjectsTable(objObjects, resultContainer, title) {
 
     // Append the table to the result container
     resultContainer.innerHTML = ''; // Clear existing content
-    resultContainer.appendChild(titleEl);
-    resultContainer.appendChild(table);
+    const headerDiv = document.createElement('div')
+    headerDiv.classList.add("header-container")
+
+    headerDiv.appendChild(titleEl);
+
+
+    const downloadBtn = document.createElement('button');
+    const iconEl = document.createElement('i')
+    iconEl.classList.add("fa-solid", "fa-file-csv");
+    downloadBtn.appendChild(iconEl)
+    downloadBtn.addEventListener('click', () => {
+        downloadCSV(objObjects, title);
+    });
+
+    headerDiv.append(downloadBtn)
+    resultContainer.append(headerDiv)
+    resultContainer.appendChild(tableDiv);
     resultContainer.style.display = 'flex';
+    document.getElementById("display-area").appendChild(resultContainer);
+    function downloadCSV(objObjects, title) {
+        const csvContent = convertArrayToCSV(objObjects, separatorInput);
+        console.log(csvContent)
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', title || 'data.csv');
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+    }
+
+    function convertArrayToCSV(data, separator) {
+        // Check if the input is not an empty array
+        if (!Array.isArray(data) || data.length === 0) {
+            console.error('Input is not a valid array of objects.');
+            return '';
+        }
+
+        // Extract headers from the first object
+        const headers = Object.keys(data[0]);
+
+        // Create CSV content
+        return [
+            headers.join(separator), // CSV header
+            ...data.map(obj => headers.map(header => obj[header]).join(separator)) // Data rows
+        ].join('\n');
+    }
 }
 
-/**
- * Checks if a room is available for a specified time slot on a given date.
- *
- * @param {string} roomName - The name of the room to check for availability.
- * @param {string} date - The date in the format 'DD/MM/YYYY'.
- * @param {string} startTime - The start time in the format 'HH:mm'.
- * @param {string} endTime - The end time in the format 'HH:mm'.
- * @param {boolean} debug - A flag indicating whether to print debug information.
- * @returns {boolean} Returns true if the room is available; otherwise, returns false.
- */
+function displayCalendar(events, i){
+    console.log("Here ", i)
+
+    var convertedEvents = events.map(function(event) {
+
+        var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
+        var endDateTime = moment(event.Dia + ' ' + event.Fim, 'DD/MM/YYYY HH:mm:ss');
+
+        let subTitle = "No Room Allocated!"
+        if(event["Sala da aula"])
+            subTitle = event["Sala da aula"]
+
+        return {
+            title: event["Unidade de execução"],
+            subtitle: subTitle,
+            start: startDateTime.format(),
+            end: endDateTime.format()
+
+        };
+    });
+
+    const calendarName = `calendar${i}`
+    const calendarContainerDiv = document.createElement('div')
+    calendarContainerDiv.classList.add('box')
+    calendarContainerDiv.id=`calendar-container${i}`
+    const calendarDiv = document.createElement('div')
+    calendarDiv.id = calendarName
+    calendarContainerDiv.appendChild(calendarDiv)
+    console.log("cn ", calendarName, " cd ", calendarDiv, " ce ", calendarContainerDiv)
+    calendarContainerDiv.style.display = 'flex';
+    document.getElementById("display-area").appendChild(calendarContainerDiv)
+
+    $('#'+calendarName).fullCalendar({
+        header: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'month,agendaWeek,agendaDay,listWeek,year'
+        },
+        defaultView: 'month', // Set the default view to month
+        events: convertedEvents, // Pass your converted events here
+        locale: 'pt', // Set the locale to Portuguese
+        timeFormat: 'HH:mm',
+        buttonText: {
+            today: 'Hoje',
+            month: 'Mês',
+            week: 'Semana',
+            day: 'Dia',
+            list: 'Lista',
+            year: 'Ano' // Added translation for 'year'
+        },
+        eventRender: function (event, element) {
+            // Add subtitle to event element
+            if (event.subtitle) {
+                element.append('<div class="fc-subtitle">' + event.subtitle + '</div>');
+            }
+        }
+        // Additional options can be added here
+    });
 
 
-/**
- * Compare two time strings and return the result.
- *
- * @param {string} time1 - The first time string in the format 'HH:mm'.
- * @param {string} time2 - The second time string in the format 'HH:mm'.
- * @param {boolean} [debug=false] - If true, log debug information to the console.
- * @returns {number} Returns -1 if time1 is earlier than time2, 1 if time1 is later than time2,
- *                   and 0 if both times are equal.
- * @example
- * const result = compareTimes('12:30', '14:45', true);
- * console.log(result); // Output: -1
- */
+}
+
 
 /**
  * Compares two objects based on their date and time properties.

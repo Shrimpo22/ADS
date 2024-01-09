@@ -84,8 +84,8 @@ function runAlgorithmForDay(dayIndex) {
             startNextWorker();
         }else {
             workerPool.forEach(worker => worker.terminate())
-            printObjectsTable(mainMatches, document.getElementById("result-match-container"), "Greedy Allocation")
-            displayCalendar(mainMatches)
+            printObjectsTable(mainMatches, "Greedy Allocation")
+            displayCalendar(mainMatches, 1)
         }
     };
 }

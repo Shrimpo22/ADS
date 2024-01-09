@@ -35,7 +35,6 @@ document.querySelectorAll(".drop-zone__input").forEach((inputElement) => {
     });
 });
 
-
 function updateOptions(menuId, columnNames) {
     // Update the options for all select elements within the drop zone group
     const menu = document.getElementById(menuId);
