@@ -56,7 +56,6 @@ csvForm.addEventListener("submit", function (e) {
     var roomCapacityCol = document.getElementById("menu1Selection").value;
     var roomNameCol = document.getElementById("menu12Selection").value;
     var roomCharacFirstCol = document.getElementById("menu13Selection").value;
-    var roomCharacLastCol = document.getElementById("menu14Selection").value;
 
     var ucBeginningTimeCol = document.getElementById("menu2Selection").value;
     var ucEndTimeCol = document.getElementById("menu22Selection").value;
@@ -87,7 +86,7 @@ csvForm.addEventListener("submit", function (e) {
         return
     }
     if (
-        [roomCapacityCol, roomNameCol, roomCharacFirstCol, roomCharacLastCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol].includes("")
+        [roomCapacityCol, roomNameCol, roomCharacFirstCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol].includes("")
     ) {
         // Display error message
         alert("Error: One or more selections are blank. Please choose an option.");
@@ -581,7 +580,7 @@ function printObjectsTable(objObjects, title, score, last) {
                     circleRing.style.background = `conic-gradient(var(--score-25-50) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
                 if (score_to_use[property] >= 50 && score_to_use[property] < 75)
                     circleRing.style.background = `conic-gradient(var(--score-50-75) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 80)
+                if (score_to_use[property] >= 75)
                     circleRing.style.background = `conic-gradient(var(--score-75-100) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
 
                 circles.appendChild(circleRing)
@@ -616,7 +615,7 @@ function printObjectsTable(objObjects, title, score, last) {
 
             if (Array.isArray(line)) {
                 let changed = 0;
-                if (line[0] === `Matches with overfitting classes: ${classesTotal - score["nrOverCap"]}/${classesTotal}`) {
+                if (line[0] === `Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`) {
 
                     if (score_to_use["cOverCap"] < 25)
                         spanElement.style.color = "var(--score-0-25)"
@@ -733,8 +732,6 @@ function printObjectsTable(objObjects, title, score, last) {
         ].join('\n');
     }
 }
-
-
 
 function displayCalendar(events, i, container){
     const calendarContainerDiv = document.createElement('div')

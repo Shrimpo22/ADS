@@ -173,7 +173,6 @@ function saveConfigurations() {
         menu1_menu1Selection: document.getElementById("menu1Selection").value,
         menu1_menu12Selection: document.getElementById("menu12Selection").value,
         menu1_menu13Selection: document.getElementById("menu13Selection").value,
-        menu1_menu14Selection: document.getElementById("menu14Selection").value,
 
         menu2_menu2Selection: document.getElementById("menu2Selection").value,
         menu2_menu22Selection: document.getElementById("menu22Selection").value,
@@ -210,7 +209,6 @@ function handleFile() {
             setSelectOption('menu1Selection', jsonContent.menu1_menu1Selection);
             setSelectOption('menu12Selection', jsonContent.menu1_menu12Selection);
             setSelectOption('menu13Selection', jsonContent.menu1_menu13Selection);
-            setSelectOption('menu14Selection', jsonContent.menu1_menu14Selection);
 
             setSelectOption('menu2Selection', jsonContent.menu2_menu2Selection);
             setSelectOption('menu22Selection', jsonContent.menu2_menu22Selection);
