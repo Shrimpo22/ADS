@@ -47,13 +47,15 @@ onmessage = function (e) {
             if(carac === false)
                 withouthCaracCounter ++
             const difference = matchingRooms[0]["Capacidade Normal"] - cls['Inscritos no turno']
-            if(difference > 0)
+            if(difference >= 0)
                 capWastedCounter += matchingRooms[0]["Capacidade Normal"] - cls['Inscritos no turno']
             else{
                 nrOverCapCounter ++
                 nrStuOverCapCounter += Math.abs(difference)
             }
         } else {
+            nrOverCapCounter ++
+            withouthCaracCounter ++;
             withouthRoomCounter ++;
         }
 

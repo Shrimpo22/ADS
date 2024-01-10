@@ -15,8 +15,11 @@ var greedyWithouthRoom = 0;
 var greedyCaracWasted = 0;
 var greedyCapWasted = 0;
 var greedyCaracNotFulfilled = 0;
-
-function aldrich(roomsObjects, schDate) {
+let gLast = false
+function aldrich(roomsObjects, schDate, l) {
+    if(!schDate)
+        return
+    gLast=l
     workerPool = new LinkedList()
     scheduleMapByDate = new Map()
     capacityMap = new Map()
@@ -89,13 +92,13 @@ function gdrunAlgorithmForDay(dayIndex) {
             caracNotFulfilledCounter,
             capWastedCounter } = e.data;
 
-        highLowNrOverCap += Number(nrOverCapCounter);
-        highLowNrStuOverCap += Number(nrStuOverCapCounter);
-        highLowWithouthCarac += Number(withouthCaracCounter);
-        highLowWithouthRoom += Number(withouthRoomCounter)
-        highLowCaracWasted += Number(caracWastedCounter)
-        highLowCaracNotFulfilled += Number(caracNotFulfilledCounter)
-        highLowCapWasted += Number(capWastedCounter)
+        greedyNrOverCap += Number(nrOverCapCounter);
+        greedyNrStuOverCap += Number(nrStuOverCapCounter);
+        greedyWithouthCarac += Number(withouthCaracCounter);
+        greedyWithouthRoom += Number(withouthRoomCounter)
+        greedyCaracWasted += Number(caracWastedCounter)
+        greedyCaracNotFulfilled += Number(caracNotFulfilledCounter)
+        greedyCapWasted += Number(capWastedCounter)
 
         matches.forEach(m => mainMatches.push(m))
 
@@ -106,16 +109,18 @@ function gdrunAlgorithmForDay(dayIndex) {
         if (currDay < totalDays - 1) {
             gdstartNextWorker();
         }else {
-            const score = {"nrOverCap":highLowNrOverCap, "nrStuOverCap": highLowNrStuOverCap,  "withouthCarac": highLowWithouthCarac,
-                "withouthRoom":highLowWithouthRoom , "caracWasted":highLowCaracWasted, "caracNotFulfilled":highLowCaracNotFulfilled, "capWasted":highLowCapWasted }
+            const gscore = {"nrOverCap":greedyNrOverCap,
+                "nrStuOverCap": greedyNrStuOverCap,  "withouthCarac": greedyWithouthCarac,
+                "withouthRoom":greedyWithouthRoom , "caracWasted":greedyCaracWasted, "caracNotFulfilled":greedyCaracNotFulfilled, "capWasted":greedyCapWasted }
 
             workerPool.forEach(worker => worker.terminate())
-            printObjectsTable(mainMatches, "Greedy Allocations", score)
-            displayCalendar(mainMatches, 1)
+            if(gLast)
+                printObjectsTable(mainMatches, "Aldrich Allocations", gscore, true)
+            else
+                printObjectsTable(mainMatches, "Aldrich Allocations", gscore, false)
         }
     };
     worker.onerror = function (){
-        console.log("GREEDSERROR")
     }
 }
 

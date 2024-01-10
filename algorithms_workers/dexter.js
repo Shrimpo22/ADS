@@ -15,11 +15,12 @@ var highLowCaracWasted = 0;
 var highLowCapWasted = 0;
 var highLowCaracNotFulfilled = 0;
 
-function dexter(roomsObjects, schDate) {
-    console.log("Here?")
-
+let dlast = false
+function dexter(roomsObjects, schDate, l) {
+    if(!schDate)
+        return
+    dlast = l
     highLowWorkerPool = new LinkedList()
-    console.log("Hero?")
     highLowScheduleMapByDate = new Map()
     highLowCapacityMap = new Map()
 
@@ -100,7 +101,6 @@ function hlrunAlgorithmForDay(dayIndex) {
         highLowCaracNotFulfilled += Number(caracNotFulfilledCounter)
         highLowCapWasted += Number(capWastedCounter)
 
-        console.log("1: ", Number(nrOverCapCounter), " 2: ", Number(nrStuOverCapCounter), " 3: ", Number(withouthCaracCounter), " 4: ", withouthRoomCounter ," -> ", highLowWithouthRoom, " 5: ", Number(caracWastedCounter), " 6: ", caracNotFulfilledCounter, " 7: ", capWastedCounter )
         matches.forEach(m => highLowMainMatches.push(m))
 
         highLowWorkerPool.push(worker);
@@ -110,12 +110,14 @@ function hlrunAlgorithmForDay(dayIndex) {
         if (highLowCurrDay < highLowTotalDays - 1) {
             hlstartNextWorker();
         }else {
-            const score = {"nrOverCap":highLowNrOverCap, "nrStuOverCap": highLowNrStuOverCap,  "withouthCarac": highLowWithouthCarac,
+            const hscore = {"nrOverCap":highLowNrOverCap, "nrStuOverCap": highLowNrStuOverCap,  "withouthCarac": highLowWithouthCarac,
                 "withouthRoom":highLowWithouthRoom , "caracWasted":highLowCaracWasted, "caracNotFulfilled":highLowCaracNotFulfilled, "capWasted":highLowCapWasted }
-            console.log("Score: ", score)
             highLowWorkerPool.forEach(worker => worker.terminate())
-            printObjectsTable(highLowMainMatches, "High Low Allocations", score)
-            displayCalendar(highLowMainMatches, 3)
+            if(dlast)
+                printObjectsTable(highLowMainMatches, "Dexter Allocations", hscore, true)
+            else
+                printObjectsTable(highLowMainMatches, "Dexter Allocations", hscore, false)
+
         }
     };
 }

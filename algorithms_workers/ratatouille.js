@@ -7,7 +7,19 @@ let roomsObjects = []
 const ratMainMatches = []
 let ratCurrDay = 0
 
-function ratatouille(rO, scheduleObjects, debug) {
+var ratNrOverCap = 0;
+var ratNrStuOverCap = 0;
+var ratWithouthCarac = 0;
+var ratWithouthRoom = 0;
+var ratCaracWasted = 0;
+var ratCapWasted = 0;
+var ratCaracNotFulfilled = 0;
+let last = false
+
+function ratatouille(rO, scheduleObjects, debug, l) {
+    if(!scheduleObjects)
+        return
+    last = l
     ratWorkerPool = new LinkedList();
     roomsObjects = rO
     // Initialize the worker pool
@@ -43,7 +55,21 @@ function runRatAlgorithmForDay(dayIndex) {
     remy.postMessage(data);
 
     remy.onmessage = function (e) {
-        const { matches } = e.data;
+        const { matches, nrOverCapCounter,
+            nrStuOverCapCounter,
+            withouthCaracCounter,
+            withouthRoomCounter,
+            caracWastedCounter,
+            caracNotFulfilledCounter,
+            capWastedCounter} = e.data;
+
+        ratNrOverCap += Number(nrOverCapCounter);
+        ratNrStuOverCap += Number(nrStuOverCapCounter);
+        ratWithouthCarac += Number(withouthCaracCounter);
+        ratWithouthRoom += Number(withouthRoomCounter);
+        ratCaracWasted += Number(caracWastedCounter);
+        ratCaracNotFulfilled += Number(caracNotFulfilledCounter);
+        ratCapWasted += Number(capWastedCounter);
 
         matches.forEach(m => ratMainMatches.push(m))
 
@@ -56,9 +82,21 @@ function runRatAlgorithmForDay(dayIndex) {
         if (ratCurrDay < ratTotalDays - 1) {
             startNextRatWorker();
         } else {
+            const rscore = {
+                "nrOverCap": ratNrOverCap,
+                "nrStuOverCap": ratNrStuOverCap,
+                "withouthCarac": ratWithouthCarac,
+                "withouthRoom": ratWithouthRoom,
+                "caracWasted": ratCaracWasted,
+                "caracNotFulfilled": ratCaracNotFulfilled,
+                "capWasted": ratCapWasted
+            };
             ratWorkerPool.forEach(remy => remy.terminate())
-            printObjectsTable(ratMainMatches, "Ratatouille Allocations")
-            displayCalendar(ratMainMatches,2)
+
+            if(last)
+                printObjectsTable(ratMainMatches, "Ratatouille Allocations", rscore, true)
+            else
+                printObjectsTable(ratMainMatches, "Ratatouille Allocations", rscore, false)
         }
     };
 }

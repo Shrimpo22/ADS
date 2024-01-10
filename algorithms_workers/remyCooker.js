@@ -1,6 +1,15 @@
 let ratAllocatedRooms = {};
 
 onmessage = function (e) {
+    const allocatedRooms = {}
+    var nrOverCapCounter = 0;
+    var nrStuOverCapCounter = 0;
+    var withouthCaracCounter = 0;
+    var withouthRoomCounter = 0;
+    var caracWastedCounter = 0;
+    var capWastedCounter = 0;
+    var caracNotFulfilledCounter = 0;
+
     const {roomsObjects, scheduleForDay} = e.data;
 
     // Perform ratatouille algorithm logic
@@ -31,14 +40,38 @@ onmessage = function (e) {
                 return {name, cap, carac, value};
             });
 
-        if (matchingRooms.length === 0) {
+        if (matchingRooms.length === 0 || !matchingRooms) {
+            nrOverCapCounter ++;
+            withouthCaracCounter ++;
+            withouthRoomCounter ++;
             matches.push(so)
             continue
         }
 
+
+
         const roomWithHighestValue = matchingRooms.reduce((maxRoom, currentRoom) => {
             return currentRoom.value > maxRoom.value ? currentRoom : maxRoom;
         }, matchingRooms[0]);
+
+        let carac = false
+        for ( const requirement of so['Características da sala pedida para a aula']){
+            if (roomWithHighestValue.carac.includes(requirement)) {
+                carac = true
+                caracNotFulfilledCounter ++
+            } else{
+                caracWastedCounter ++
+            }
+        }
+        if(carac === false)
+            withouthCaracCounter ++
+        const difference = roomWithHighestValue.cap - so['Inscritos no turno']
+        if(difference >= 0)
+            capWastedCounter += roomWithHighestValue.cap - so['Inscritos no turno']
+        else{
+            nrOverCapCounter ++
+            nrStuOverCapCounter += Math.abs(difference)
+        }
 
         markAsUnavailable(roomWithHighestValue.name, so['Dia'], so['Início'], so['Fim'], false)
         so["Sala da aula"] = roomWithHighestValue.name;
@@ -47,7 +80,13 @@ onmessage = function (e) {
         matches.push(so);
     }
 
-    postMessage({matches});
+    postMessage({matches,  nrOverCapCounter,
+        nrStuOverCapCounter,
+        withouthCaracCounter,
+        withouthRoomCounter,
+        caracWastedCounter,
+        caracNotFulfilledCounter,
+        capWastedCounter });
 
     function markAsUnavailable(roomName, date, startTime, endTime, debug) {
 

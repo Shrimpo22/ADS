@@ -31,6 +31,8 @@ let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
 let roomsTotal = 0
 let classesTotal = 0
 
+let globalI = 1
+
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
 
@@ -132,8 +134,8 @@ csvForm.addEventListener("submit", function (e) {
 
             printObjectsTable(roomsObjects, rooms_input.name)
             printObjectsTable(scheduleObjects, schedule_input.name)
-            roomsTotal = roomsObjects.slice(1).length
-            classesTotal = scheduleObjects.slice(1).length
+            roomsTotal = roomsObjects.length
+            classesTotal = scheduleObjects.length
 
 
             const objectsByDateMap = new Map();
@@ -206,22 +208,50 @@ csvForm.addEventListener("submit", function (e) {
             //     } )
             // })
 
+            let last=0
+            if (greedyCheck)
+                last = 1
+            if (highlowCheck)
+                last = 2
+            if (ratCheck)
+                last = 3
+
+
+
+
             if (greedyCheck) {
-                aldrich(roomsObjects, objectsByDateMap)
+                isLoading = 1
+                toggleLoading()
+                if(last === 1){
+                    console.log("Greedy is the last")
+                    aldrich(roomsObjects, objectsByDateMap, true)
+                }else
+                    aldrich(roomsObjects, objectsByDateMap, false)
             }
             if(highlowCheck) {
-                dexter(roomsObjects, objectsByDateMap)
+                isLoading = 1
+                toggleLoading()
+                if(last === 2){
+                    console.log("Dexter is the last")
+                    dexter(roomsObjects, objectsByDateMap, true)
+                }else
+                    dexter(roomsObjects, objectsByDateMap, false)
             }
-            if (ratCheck)
-                ratatouille(roomsObjects, objectsByDateMap, false)
-            isLoading = 0
-            toggleLoading()
+            if (ratCheck) {
+                isLoading = 1
+                toggleLoading()
+                if(last === 3){
+                    console.log("Ratatouille is the last")
+                    ratatouille(roomsObjects, objectsByDateMap,false, true)
+                }else
+                    ratatouille(roomsObjects, objectsByDateMap,false, false)
+            }
+
+
 
         })
         .catch(error => {
             alert("Error reading " + error)
-            isLoading = 0
-            toggleLoading()
         });
 
 });
@@ -388,9 +418,7 @@ function findConflictingClasses(classes, debug) {
  * @param {Array<Object>} objObjects - Array of objects to be displayed.
  * @param {HTMLElement} resultContainer - HTML element to display the table.
  */
-function printObjectsTable(objObjects, title, score) {
-
-
+function printObjectsTable(objObjects, title, score, last) {
 
     const resultContainer = document.createElement('div')
     resultContainer.classList.add("box")
@@ -411,6 +439,9 @@ function printObjectsTable(objObjects, title, score) {
         return keys;
     }, []);
 
+    const titleInfo = document.createElement("div")
+    titleInfo.classList.add('title-info')
+
     const titleEl = document.createElement('span')
     titleEl.classList.add('title')
     titleEl.textContent = title
@@ -419,6 +450,32 @@ function printObjectsTable(objObjects, title, score) {
     const table = document.createElement('table');
     const tableDiv = document.createElement("div")
     tableDiv.classList.add('table-container');
+
+
+    const calendarBtn = document.createElement('button')
+    if (score) {
+        const calendarIco = document.createElement("i")
+        calendarIco.classList.add("fa-regular", "fa-calendar-days")
+        calendarBtn.appendChild(calendarIco)
+
+        calendarBtn.addEventListener('click', function () {
+            const calendarDiv = resultContainer.querySelector(`.calendar-display`);
+            if (!calendarDiv) {
+                tableDiv.style.display = 'none';
+                displayCalendar(objObjects, globalI, resultContainer)
+                globalI++
+            } else {
+                if (tableDiv.style.display === 'none') {
+                    tableDiv.style.display = '';
+                    calendarDiv.style.display = 'none'
+                } else {
+                    tableDiv.style.display = 'none';
+                    calendarDiv.style.display = ''
+                }
+            }
+        });
+    }
+
 
     // Create the table header
     const thead = document.createElement('thead');
@@ -438,7 +495,7 @@ function printObjectsTable(objObjects, title, score) {
 
     let itTemp = 0
     objObjects.forEach(obj => {
-        if(itTemp < maxRowsToDisplay) {
+        if (itTemp < maxRowsToDisplay) {
             const row = document.createElement('tr');
             allKeys.forEach(key => {
                 const cell = document.createElement('td');
@@ -456,10 +513,14 @@ function printObjectsTable(objObjects, title, score) {
     const headerDiv = document.createElement('div')
     headerDiv.classList.add("header-container")
 
-    headerDiv.appendChild(titleEl);
-
+    titleInfo.appendChild(titleEl)
+    headerDiv.appendChild(titleInfo);
+    if (score) {
+        titleInfo.appendChild(calendarBtn);
+    }
 
     const downloadBtn = document.createElement('button');
+    downloadBtn.classList.add("btn")
     const iconEl = document.createElement('i')
     iconEl.classList.add("fa-solid", "fa-file-csv");
     downloadBtn.appendChild(iconEl)
@@ -467,11 +528,178 @@ function printObjectsTable(objObjects, title, score) {
         downloadCSV(objObjects, title);
     });
 
-    headerDiv.append(downloadBtn)
-    resultContainer.append(headerDiv)
+    const headingsDiv = document.createElement("div")
+    headingsDiv.classList.add("headings-container")
+
+    const rightSide = document.createElement("div")
+    rightSide.classList.add("right-side")
+
+    headerDiv.append(rightSide)
+    if (score) {
+        console.log("Score: ", score)
+        const score_to_use = {
+            "cOverCap": [Math.round(100 - ((score["nrOverCap"] / classesTotal) * 100))],
+            "sOverCap": score["nrStuOverCap"],
+            "cWithCar": [Math.round(100 - ((score["withouthCarac"] / classesTotal) * 100))],
+            "cWithRoom": [Math.round(100 - ((score["withouthRoom"] / classesTotal) * 100))],
+            "rCaracWasted": score["caracWasted"],
+            "cCaracNotFulfilled": score["caracNotFulfilled"],
+            "rCapWasted": score["capWasted"]
+        }
+        console.log("Score to use: ", score_to_use)
+        const scores = document.createElement("div")
+        scores.classList.add("scores")
+
+        const circles = document.createElement("div")
+        circles.classList.add("circles")
+
+
+        for (let property in score_to_use) {
+
+            if (Array.isArray(score_to_use[property])) {
+                console.log("B", property)
+                const circleRing = document.createElement('div')
+                circleRing.classList.add("circle-ring")
+                const backgroundCircle = document.createElement('div')
+                backgroundCircle.classList.add("circle-bg")
+                const circleDisplay = document.createElement('div')
+                circleDisplay.classList.add("circle-display")
+                const percentageNumber = document.createElement("h1")
+                percentageNumber.classList.add("circle-score-text")
+                percentageNumber.textContent = score_to_use[property]
+
+
+                circleDisplay.appendChild(percentageNumber)
+                backgroundCircle.appendChild(circleDisplay)
+                circleRing.appendChild(backgroundCircle)
+
+                if (score_to_use[property] <= 2)
+                    score_to_use[property] = 2
+                if (score_to_use[property] < 25)
+                    circleRing.style.background = `conic-gradient(var(--score-0-25) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
+                if (score_to_use[property] >= 25 && score_to_use[property] < 50)
+                    circleRing.style.background = `conic-gradient(var(--score-25-50) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
+                if (score_to_use[property] >= 50 && score_to_use[property] < 75)
+                    circleRing.style.background = `conic-gradient(var(--score-50-75) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
+                if (score_to_use[property] >= 80)
+                    circleRing.style.background = `conic-gradient(var(--score-75-100) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
+
+                circles.appendChild(circleRing)
+            }
+
+        }
+
+        const moreinfoBtn = document.createElement("button")
+        moreinfoBtn.classList.add("more-info-btn")
+
+        const moreInfoDiv = document.createElement("div")
+        moreInfoDiv.classList.add("more-info")
+
+        const infoIcon = document.createElement("i")
+        infoIcon.classList.add("fa-solid", "fa-circle-info")
+
+        moreinfoBtn.appendChild(infoIcon)
+
+        moreInfoDiv.style.display = 'none'
+        const linesOfText = [
+            [`Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`],
+            [`Number of students in overcrowding: ${score_to_use["sOverCap"]}`],
+            [`Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`],
+            [`Number of features wasted: ${score_to_use["rCaracWasted"]}`],
+            [`Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`],
+            [`Number of features wasted: ${score_to_use["cCaracNotFulfilled"]}`],
+            [`Capacity wasted with matches: ${score_to_use["rCapWasted"]}`]
+        ];
+
+        linesOfText.forEach(line => {
+            const spanElement = document.createElement('span');
+
+            if (Array.isArray(line)) {
+                let changed = 0;
+                if (line[0] === `Matches with overfitting classes: ${classesTotal - score["nrOverCap"]}/${classesTotal}`) {
+
+                    if (score_to_use["cOverCap"] < 25)
+                        spanElement.style.color = "var(--score-0-25)"
+                    if (score_to_use["cOverCap"] >= 25 && score_to_use["cOverCap"] < 50)
+                        spanElement.style.color = "var(--score-25-50)"
+                    if (score_to_use["cOverCap"] >= 50 && score_to_use["cOverCap"] < 75)
+                        spanElement.style.color = "var(--score-50-75)"
+                    if (score_to_use["cOverCap"] >= 75)
+                        spanElement.style.color = "var(--score-75-100)"
+                    spanElement.textContent = line[0] + " (First Score Circle) ";
+                    spanElement.style.fontWeight = 'bold'
+                    changed = 1
+                }
+
+                if (line[0] === `Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`) {
+                    if (score_to_use["cWithCar"] < 25)
+                        spanElement.style.color = "var(--score-0-25)"
+                    if (score_to_use["cWithCar"] >= 25 && score_to_use["cWithCar"] < 50)
+                        spanElement.style.color = "var(--score-25-50)"
+                    if (score_to_use["cWithCar"] >= 50 && score_to_use["cWithCar"] < 75)
+                        spanElement.style.color = "var(--score-50-75)"
+                    if (score_to_use["cWithCar"] >= 75)
+                        spanElement.style.color = "var(--score-75-100)"
+                    spanElement.textContent = line[0] + " (Second Score Circle) ";
+                    spanElement.style.fontWeight = 'bold'
+                    changed = 1
+                }
+
+                if (line[0] === `Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`) {
+                    if (score_to_use["cWithRoom"] < 25)
+                        spanElement.style.color = "var(--score-0-25)"
+                    if (score_to_use["cWithRoom"] >= 25 && score_to_use["cWithRoom"] < 50)
+                        spanElement.style.color = "var(--score-25-50)"
+                    if (score_to_use["cWithRoom"] >= 50 && score_to_use["cWithRoom"] < 75)
+                        spanElement.style.color = "var(--score-50-75)"
+                    if (score_to_use["cWithRoom"] >= 75)
+                        spanElement.style.color = "var(--score-75-100)"
+                    spanElement.textContent = line[0] + " (Third Score Circle) ";
+                    spanElement.style.fontWeight = 'bold'
+                    changed = 1
+                }
+
+                if (changed === 0) {
+                    spanElement.textContent = line[0];
+                    spanElement.style.color = 'white';
+                }
+
+            }
+
+            moreInfoDiv.appendChild(spanElement);
+            //moreInfoDiv.appendChild(document.createElement('br')); // Add line break between spans
+        });
+
+
+        moreinfoBtn.addEventListener('click', function () {
+            if (moreInfoDiv.style.display === 'none') {
+                moreInfoDiv.style.display = 'flex';
+            } else {
+                moreInfoDiv.style.display = 'none';
+            }
+        });
+
+        scores.appendChild(circles)
+        scores.appendChild(moreinfoBtn)
+
+        headingsDiv.appendChild(moreInfoDiv)
+
+        rightSide.appendChild(scores)
+    }
+    rightSide.appendChild(downloadBtn)
+
+
+    headingsDiv.appendChild(headerDiv)
+    resultContainer.append(headingsDiv)
     resultContainer.appendChild(tableDiv);
     resultContainer.style.display = 'flex';
     document.getElementById("display-area").appendChild(resultContainer);
+
+    if (last){
+        console.log("HEY????????")
+        isLoading = 0
+        toggleLoading()
+    }
     function downloadCSV(objObjects, title) {
         const csvContent = convertArrayToCSV(objObjects, separatorInput);
         console.log(csvContent)
@@ -506,8 +734,11 @@ function printObjectsTable(objObjects, title, score) {
     }
 }
 
-function displayCalendar(events, i){
+
+
+function displayCalendar(events, i, container){
     const calendarContainerDiv = document.createElement('div')
+    calendarContainerDiv.id = `calendarDiv${i}`
     calendarContainerDiv.classList.add('box')
 
     if (events.length === 0) {
@@ -536,11 +767,12 @@ function displayCalendar(events, i){
     const calendarName = `calendar${i}`
 
     calendarContainerDiv.id=`calendar-container${i}`
+    calendarContainerDiv.classList.add("calendar-display")
     const calendarDiv = document.createElement('div')
     calendarDiv.id = calendarName
     calendarContainerDiv.appendChild(calendarDiv)
     calendarContainerDiv.style.display = 'flex';
-    document.getElementById("display-area").appendChild(calendarContainerDiv)
+    container.appendChild(calendarContainerDiv)
 
     $('#'+calendarName).fullCalendar({
         header: {
@@ -568,7 +800,6 @@ function displayCalendar(events, i){
         }
         // Additional options can be added here
     });
-
 
 }
 

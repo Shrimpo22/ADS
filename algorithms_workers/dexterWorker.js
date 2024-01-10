@@ -59,12 +59,14 @@ onmessage = function (e) {
                     caracWastedCounter ++
                 }
             }
-            if(carac === false)
-                withouthCaracCounter ++
+
+            if(carac === false) {
+                withouthCaracCounter++
+            }
 
 
             const difference = matchingRooms[0]["Capacidade Normal"] - cls['Inscritos no turno']
-            if(difference > 0)
+            if(difference >= 0)
                 capWastedCounter += matchingRooms[0]["Capacidade Normal"] - cls['Inscritos no turno']
             else{
                 nrOverCapCounter ++
@@ -73,12 +75,15 @@ onmessage = function (e) {
 
 
         } else {
+            withouthCaracCounter ++;
             withouthRoomCounter ++;
         }
 
 
         matches.push(cls);
     });
+
+    console.log("Boogie", withouthCaracCounter)
 
     postMessage({ matches,  nrOverCapCounter,
         nrStuOverCapCounter,

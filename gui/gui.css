@@ -9,7 +9,12 @@
     --containers-color: #d0e2f8;
     --table-border-color: #061a8c;
     --table-bg-color: #ffffff;
-    --bold-color: #246BA9
+    --bold-color: #246BA9;
+    --score-left-color: #ecf0f1;
+    --score-0-25: red;
+    --score-25-50: orange;
+    --score-50-75: yellow;
+    --score-75-100:#69BD6F;
 }
 
 .box {
@@ -43,6 +48,7 @@
 
 
 .header-container button {
+    margin-top: auto;
     border: none;
     border-radius: 5px;
     margin-left: auto;
@@ -127,6 +133,8 @@ li {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+
 body {
     margin:0;
     padding: 0;
@@ -179,6 +187,118 @@ footer {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.circle-ring {
+    margin-left: auto;
+    margin-right: 10px;
+
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    aspect-ratio: 1;
+    border-radius: 50%;
+
+}
+
+.right-side{
+    display: flex;
+    flex-direction: row;
+    margin-left: auto;
+    align-items: center;
+}
+
+
+.circle-bg{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+
+}
+
+.circle-display{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    height: 90%;
+    border-radius: 50%;
+}
+
+.circle-score-text{
+    font-size: 20px;
+}
+
+.scores{
+    display: flex;
+    flex-direction: row;
+}
+
+.more-info {
+    margin-bottom: 20px;
+    padding: 20px;
+    text-align: left;
+    flex-direction: column;
+    background-color: #66687a;
+    border-radius: 10px;
+    justify-content: space-evenly;
+}
+
+.title-info{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.title-info button{
+    display: flex;
+    margin-left: 10px;
+    height: 30px;
+    aspect-ratio: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.fa-calendar-days{
+    font-size: 22px;
+}
+
+.more-info span{
+    margin: 5px;
+}
+
+.scores button{
+    border-radius: 50%;
+    margin-right: 10px;
+    aspect-ratio: 1;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fa-circle-info{
+    font-size: 29px;
+}
+
+
+.circles{
+    margin-left: auto;
+    margin-top: auto;
+    display: flex;
+    flex-direction: row;
+}
+
+.score-info{
+    display: flex;
+    flex-direction: column;
 }
 
 
