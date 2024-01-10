@@ -70,6 +70,23 @@ csvForm.addEventListener("submit", function (e) {
     var greedyCheck = document.getElementById("check1").checked;
     var highlowCheck = document.getElementById("check2").checked;
     var ratCheck = document.getElementById("check3").checked;
+    var linguiniCheck = document.getElementById('check4').checked;
+
+    var featureSelected = "a"
+
+    if(linguiniCheck) {
+        var mainCapValue = document.getElementById('numberInput').value
+        var mainCaracGeneralValue = document.getElementById('numberInput2').value
+        var mainSpecialCaracValue = document.getElementById('numberInput3').value
+        var selectElement = document.getElementById("linguiniSelection");
+        // Get the selected index
+        var selectedIndex = selectElement.selectedIndex;
+        // Get the selected option
+        var selectedOption = selectElement.options[selectedIndex];
+        // Get the text content of the selected option
+        var mainSpecialCaracName = selectedOption.text
+        featureSelected = selectElement.value
+    }
 
     var timeFormat = document.getElementById("timeFormatSelector").value;
     var dayFormat = document.getElementById("dayFormatSelector").value;
@@ -86,7 +103,7 @@ csvForm.addEventListener("submit", function (e) {
         return
     }
     if (
-        [roomCapacityCol, roomNameCol, roomCharacFirstCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol].includes("")
+        [roomCapacityCol, roomNameCol, roomCharacFirstCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol, featureSelected].includes("")
     ) {
         // Display error message
         alert("Error: One or more selections are blank. Please choose an option.");
@@ -214,6 +231,8 @@ csvForm.addEventListener("submit", function (e) {
                 last = 2
             if (ratCheck)
                 last = 3
+            if (linguiniCheck)
+                last = 4
 
 
 
@@ -244,6 +263,16 @@ csvForm.addEventListener("submit", function (e) {
                     ratatouille(roomsObjects, objectsByDateMap,false, true)
                 }else
                     ratatouille(roomsObjects, objectsByDateMap,false, false)
+            }
+
+            if (linguiniCheck){
+                isLoading = 1
+                toggleLoading()
+                if(last === 4){
+                    console.log("Linguine is the last")
+                    linguini(roomsObjects, objectsByDateMap, false, true, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
+                }else
+                    linguini(roomsObjects, objectsByDateMap, false, false, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
             }
 
 

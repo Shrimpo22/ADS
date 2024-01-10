@@ -168,6 +168,8 @@ function saveConfigurations() {
         check1: document.getElementById('check1').checked,
         check2: document.getElementById('check2').checked,
         check3: document.getElementById('check3').checked,
+        check4: document.getElementById('check4').checked,
+
         timeFormat: document.getElementById('timeFormatSelector').value,
         dayFormat: document.getElementById('dayFormatSelector').value,
         menu1_menu1Selection: document.getElementById("menu1Selection").value,
@@ -186,6 +188,13 @@ function saveConfigurations() {
 
         // Add more configurations as needed
     };
+
+    if (configurations.check4) {
+        configurations.numberInput = document.getElementById("numberInput").value;
+        configurations.numberInput2 = document.getElementById("numberInput2").value;
+        configurations.numberInput3 = document.getElementById("numberInput3").value;
+        configurations.linguiniSelection = document.getElementById("linguiniSelection").value;
+    }
 
     const jsonContent = JSON.stringify(configurations);
     localStorage.setItem('formConfigurations', jsonContent);
@@ -260,6 +269,29 @@ function showMenu(menuId, fileInput) {
     if (fileInput.files.length > 0) {
         menus++
         if(menus===2){
+            const linguiniCheck = document.getElementById('check4').checked
+
+            if(linguiniCheck){
+
+                const linguiniSelection =document.getElementById('linguiniSelection')
+                if (linguiniSelection.options.length === 0) {
+                    const menu1Options = document.getElementById('menu1Selection').options
+                    linguiniSelection.innerHTML = '';
+
+                    for (var i = 0; i < menu1Options.length; i++) {
+                        var option = document.createElement('option');
+                        option.value = menu1Options[i].value;
+                        option.text = menu1Options[i].text;
+                        linguiniSelection.add(option);
+                    }
+                }
+                const algoOptions = document.getElementById('menu-linguini')
+                algoOptions.style.display = 'flex'
+            }
+
+
+            const menus_algos = document.getElementById('menus-algos')
+            menus_algos.style.display = 'flex'
             const uploadJson = document.getElementById('fileInput');
             uploadJson.style.display = 'block';
         }
@@ -267,6 +299,8 @@ function showMenu(menuId, fileInput) {
     } else {
         menus--
         if(menus<2){
+            const menus_algos = document.getElementById('menus-algos')
+            menus_algos.style.display = 'none'
             const uploadJson = document.getElementById('fileInput');
             uploadJson.style.display = 'none';
         }
