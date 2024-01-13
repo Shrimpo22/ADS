@@ -8,7 +8,7 @@ Two .csv files are needed to use this application:
 - the available classrooms and their respective features
 - a year long calendar of ISCTE's classes
 
-Example files are stored at: TODO. These can be downloaded and modified to get different results.
+Example files are stored at: csv's. These can be downloaded and modified to get different results.
 
 ## Features
 
