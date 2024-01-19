@@ -18,12 +18,36 @@ Example files are stored at: [csv's](https://github.com/moonzn/university-softwa
 These are the features available to users when using this application:
 
 - Automatic assignment of classrooms to a year long schedule
-- Downloadable .csv file of the resulting schedule
-- Preview of the .csv files
-- Selection of .csv columns used
+- Downloadable CSV file(s) of the resulting schedule(s)
+- Preview of the CSV files
+- Selection of CSV columns used
 - Three different scheduling algorithms
-- Selection of .csv separator, time format and date format
+- Selection of CSV separator, time format and date format
 - Quality criteria for each produced schedule, such as: capacity wasted, number of features wasted, etc.
-- Configuration through a .json file, that can be both downloaded and uploaded
+- Configuration through a JSON file, that can be both downloaded and uploaded
 
 ## Usage
+
+Acess the webpage through this [link](https://moonzn.github.io/university-software-architecture-project/).
+
+Input the needed files:
+
+IMAGE HERE
+
+- ${\color{red}1}$ The caracterization of the rooms
+- ${\color{green}2}$ The classes and their scheduled hours, with no rooms assigned
+  
+Adjust settings based on the input files:
+
+IMAGE HERE
+
+- ${\color{red}1}$ You can upload your JSON configuration file here. All your settings will be saved to a JSON that can be downloaded later
+- ${\color{green}2}$ Adjust the column settings based on the columns names of your input files
+
+Adjust some final settings and submit:
+
+IMAGE HERE
+
+- ${\color{red}1}$ Choose which algorithms to use: Aldrich (Greedy), Dexter (Greedy, overcapacity permitted), Ratatouille (weight based) or Linguini (weight based with customizable weights)
+- ${\color{green}2}$ Some final settings based on the content of the input
+- ${\color{purple}3}$ Submit and get results!
