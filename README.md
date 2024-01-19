@@ -50,4 +50,4 @@ ${\color{green}2}$ \- Adjust the column settings based on the columns names of y
 
 ${\color{red}1}$ \- Choose which algorithms to use: Aldrich (Greedy), Dexter (Greedy, overcapacity permitted), Ratatouille (weight based) or Linguini (weight based with customizable weights)\
 ${\color{green}2}$ \- Some final settings based on the content of the input\
-${\color{purple}3}$ \- Submit and get results!\
+${\color{purple}3}$ \- Submit and get results!
