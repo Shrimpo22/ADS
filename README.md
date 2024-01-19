@@ -1,4 +1,7 @@
-# university-software-architecture-project
+<h1 align="center">
+  university-software-architecture-project
+</h1>
+
 ### Arquitetura e Desenho de Software @ ISCTE 2023/2024
 
 The github-pages deployment of this project emulates a webpage built to improve the quality of ISCTE's scheduling.
