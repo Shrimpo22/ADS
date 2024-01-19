@@ -30,24 +30,24 @@ These are the features available to users when using this application:
 
 Acess the webpage through this [link](https://moonzn.github.io/university-software-architecture-project/).
 
-Input the needed files:
+### Input the needed files:
 
-IMAGE HERE
+![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step1.png)
 
-- ${\color{red}1}$ The caracterization of the rooms
-- ${\color{green}2}$ The classes and their scheduled hours, with no rooms assigned
+${\color{red}1}$ \- The caracterization of the rooms\
+${\color{green}2}$ \- The classes and their scheduled hours, with no rooms assigned
   
-Adjust settings based on the input files:
+### Adjust settings based on the input files:
 
-IMAGE HERE
+![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step2.png)
 
-- ${\color{red}1}$ You can upload your JSON configuration file here. All your settings will be saved to a JSON that can be downloaded later
-- ${\color{green}2}$ Adjust the column settings based on the columns names of your input files
+${\color{red}1}$ \- You can upload your JSON configuration file here. All your settings will be saved to a JSON that can be downloaded later\
+${\color{green}2}$ \- Adjust the column settings based on the columns names of your input files
 
-Adjust some final settings and submit:
+### Adjust some final settings and submit:
 
-IMAGE HERE
+![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step3.png)
 
-- ${\color{red}1}$ Choose which algorithms to use: Aldrich (Greedy), Dexter (Greedy, overcapacity permitted), Ratatouille (weight based) or Linguini (weight based with customizable weights)
-- ${\color{green}2}$ Some final settings based on the content of the input
-- ${\color{purple}3}$ Submit and get results!
+${\color{red}1}$ \- Choose which algorithms to use: Aldrich (Greedy), Dexter (Greedy, overcapacity permitted), Ratatouille (weight based) or Linguini (weight based with customizable weights)\
+${\color{green}2}$ \- Some final settings based on the content of the input\
+${\color{purple}3}$ \- Submit and get results!\
