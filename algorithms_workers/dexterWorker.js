@@ -1,7 +1,6 @@
 
 
 onmessage = function (e) {
-    console.log("Hello!")
     const allocatedRooms = {}
     var nrOverCapCounter = 0;
     var nrStuOverCapCounter = 0;
@@ -82,8 +81,6 @@ onmessage = function (e) {
 
         matches.push(cls);
     });
-
-    console.log("Boogie", withouthCaracCounter)
 
     postMessage({ matches,  nrOverCapCounter,
         nrStuOverCapCounter,
