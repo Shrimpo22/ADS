@@ -15,6 +15,7 @@
     --score-25-50: orange;
     --score-50-75: yellow;
     --score-75-100:#69BD6F;
+    --score-default:white;
 }
 
 .box {
@@ -646,4 +647,79 @@ select {
 
 #submitBtn:focus {
     outline: none;
+}
+
+#criteriaContainer {
+    flex-grow: 1;
+    text-align: left;
+    justify-content: space-evenly;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    /* Set a minimum width */
+    padding: 50px 25px;
+    background-color: var(--box-bg-color);
+    color: var(--box-text-color);
+    border: 4px solid var(--accent-color);
+    border-radius: 10px;
+}
+
+#criteriaContainer label{
+    font-weight: bolder;
+    font-size: 20px;
+    color: var(--bold-color);
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+.inputContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+}
+
+#messageInput {
+    border-radius: 2px;
+    border: 2px solid var(--accent-color);
+    width: calc(100% - 40px);
+    padding: 10px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+#addMessageIcon {
+    margin-left: 15px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-size: 25px;
+    color: #4CAF50;
+    display: none;
+}
+
+#messageList {
+    list-style-type: none;
+    height: 100%;
+    max-height: 150px;
+    overflow-y: auto;
+    border-radius: 2px;
+    border: 2px solid var(--accent-color);
+    background-color: white;
+    padding: 10px;
+}
+
+.logItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding: 5px 0;
+}
+
+.deleteIcon {
+    border-radius: 10px;
+    cursor: pointer;
+    color: red;
 }

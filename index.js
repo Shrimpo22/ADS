@@ -33,6 +33,7 @@ let classesTotal = 0
 
 let globalI = 1
 
+let criteriasToUse = []
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
 
@@ -45,6 +46,31 @@ function loadConfigurations() {
         document.getElementById('separatorInput').value = configurations.separatorInput;
         document.getElementById('maxRows').value = configurations.maxRows
         // Set more configurations as needed
+    }
+
+    if(configurations.logItems){
+        console.log("hey", configurations.logItems)
+        const logItemsArray = configurations.logItems;
+        const logItemsContainer = document.getElementById('messageList'); // Replace with the actual ID of your log items container
+
+        logItemsArray.forEach((logItemText, index) => {
+            const logItem = document.createElement('div');
+            logItem.className = 'logItem';
+
+            const spanText = document.createElement('span');
+            spanText.textContent = `${logItemText}`;
+
+            const deleteIcon = document.createElement('span');
+            deleteIcon.classList.add('deleteIcon');
+            deleteIcon.onclick = function() {
+                deleteLogItem(this);
+            };
+            deleteIcon.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+
+            logItem.appendChild(spanText)
+            logItem.appendChild(deleteIcon)
+            logItemsContainer.appendChild(logItem);
+        });
     }
 }
 
@@ -111,6 +137,8 @@ csvForm.addEventListener("submit", function (e) {
         return;
     }
 
+
+
     alert("Form submitted successfully!");
     document.getElementById('display-area').innerHTML=''
 
@@ -133,6 +161,10 @@ csvForm.addEventListener("submit", function (e) {
 
     const rooms_input = roomsCSV.files[0];
     const schedule_input = scheduleCSV.files[0];
+
+    const logs = document.querySelectorAll('.logItem span:first-child');
+    const criterias = Array.from(logs).map(log => log.textContent);
+    criteriasToUse =[...new Set(criterias)];
 
     isLoading = 1
     toggleLoading()
@@ -169,60 +201,6 @@ csvForm.addEventListener("submit", function (e) {
                     objectsByDateMap.set(date, [obj]);
                 }
             });
-
-            const matches = []
-            const workers = [];
-            let workersCount = 0;
-            const results = [];
-
-
-            // objectsByDateMap.forEach((ucsForTheDate, index) => {
-            //     console.log("AAAAAAAAAAA", ucsForTheDate)
-            //     const conflictClasses = findConflictingClasses(ucsForTheDate,false)
-            //     console.log(conflictClasses)
-            //     let wasteVar = 0
-            //     let valueVar= 0
-            //
-            //
-            //
-            //     conflictClasses.forEach(chain =>{
-            //         console.log(chain)
-            //
-            //         const worker = new Worker('lpSolverWorker.js');
-            //         workersCount++;
-            //         console.log("+1", workersCount)
-            //
-            //         worker.onmessage = function (e) {
-            //             workersCount--;
-            //             console.log("-1", workersCount)
-            //             const lpResult = e.data;
-            //             if(lpResult === -1)
-            //                 console.log("ASDASDASDASDASDCASD")
-            //             if (lpResult !== -1) {
-            //                 // Process the result
-            //                 wasteVar += lpResult.waste;
-            //                 valueVar += lpResult.value;
-            //                 lpResult.variableValues.forEach((match) => matches.push(match));
-            //             }
-            //
-            //             // Store the result and check if all workers have finished
-            //             if (workersCount === 0) {
-            //                 console.log("ACABOU")
-            //                 isLoading = 0;
-            //                 console.log("Matches", matches)
-            //                 toggleLoading();
-            //                 printObjectsTable(matches, resultLPContainer)
-            //                 displayCalendar(matches)
-            //             }
-            //         };
-            //
-            //         // Store the worker reference
-            //         workers.push(worker);
-            //
-            //         // Send data to the worker
-            //         worker.postMessage({ rooms: roomsObjects, classes: chain});
-            //     } )
-            // })
 
             let last=0
             if (greedyCheck)
@@ -448,6 +426,7 @@ function findConflictingClasses(classes, debug) {
  */
 function printObjectsTable(objObjects, title, score, last) {
 
+
     const resultContainer = document.createElement('div')
     resultContainer.classList.add("box")
     // Check if there are rooms to display
@@ -564,7 +543,6 @@ function printObjectsTable(objObjects, title, score, last) {
 
     headerDiv.append(rightSide)
     if (score) {
-        console.log("Score: ", score)
         const score_to_use = {
             "cOverCap": [Math.round(100 - ((score["nrOverCap"] / classesTotal) * 100))],
             "sOverCap": score["nrStuOverCap"],
@@ -574,6 +552,7 @@ function printObjectsTable(objObjects, title, score, last) {
             "cCaracNotFulfilled": score["caracNotFulfilled"],
             "rCapWasted": score["capWasted"]
         }
+
         console.log("Score to use: ", score_to_use)
         const scores = document.createElement("div")
         scores.classList.add("scores")
@@ -582,44 +561,87 @@ function printObjectsTable(objObjects, title, score, last) {
         circles.classList.add("circles")
 
 
-        for (let property in score_to_use) {
+        if(criteriasToUse.length>0) {
+            console.log("Criterias to USE", criteriasToUse)
+            console.log("ObjObjects", objObjects)
+            console.log("Score: ", score)
 
-            if (Array.isArray(score_to_use[property])) {
-                console.log("B", property)
-                const circleRing = document.createElement('div')
-                circleRing.classList.add("circle-ring")
-                const backgroundCircle = document.createElement('div')
-                backgroundCircle.classList.add("circle-bg")
-                const circleDisplay = document.createElement('div')
-                circleDisplay.classList.add("circle-display")
-                const percentageNumber = document.createElement("h1")
-                percentageNumber.classList.add("circle-score-text")
-                percentageNumber.textContent = score_to_use[property]
+            const criteriaScoreMap = {}
+
+            criteriasToUse.forEach(criteria => {
+                try {
+                    let inequality = false
+
+                    // Parse the expression
+                    const quotedCriteriaInput = criteria.replace(/\s/g, '');
+                    console.log("uwu", quotedCriteriaInput)
+                    const parsedCriteria = math.parse(quotedCriteriaInput);
+
+                    console.log("AYO?", parsedCriteria, parsedCriteria.op)
+                    // Check if the parsed expression is an inequality
+                    if (['<', '<=', '>', '>=', '!=', '=='].includes(parsedCriteria.op)) {
+                        inequality = true
+                    }
+
+                    let criteriaScore = 0
+                    objObjects.forEach(object => {
+                        const terms = criteria.split(/\s*([+\-*/><=])\s*/);
+                        const filteredTerms = terms.filter(term => !/^[+\-*/><=]$|^\d+$/.test(term));
+                        console.log(filteredTerms)
+
+                        const scope={}
+
+                        filteredTerms.forEach(term => scope[term.replace(/\s/g, '')] = isNaN(Number(object[term])) ? 0 : Number(object[term]))
+                        console.log("SCope ", scope)
+                        const evaluation = math.evaluate(quotedCriteriaInput, scope)
+                        console.log("Ev", evaluation)
+
+                        if(inequality) {
+                            if (evaluation === true)
+                                criteriaScore++
+                        } else
+                            criteriaScore += evaluation
+                        console.log("WHI")
+                    })
+
+                    if (inequality)
+                        criteriaScore = Math.round(((criteriaScore / classesTotal) * 100))
+
+                    criteriaScoreMap[criteria] = {inequality, criteriaScore}
 
 
-                circleDisplay.appendChild(percentageNumber)
-                backgroundCircle.appendChild(circleDisplay)
-                circleRing.appendChild(backgroundCircle)
+                } catch (error) {
+                    // Handle parsing errors
+                    console.error('Error parsing expression:', error);
+                }
 
-                if (score_to_use[property] <= 2)
-                    score_to_use[property] = 2
-                if (score_to_use[property] < 25)
-                    circleRing.style.background = `conic-gradient(var(--score-0-25) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 25 && score_to_use[property] < 50)
-                    circleRing.style.background = `conic-gradient(var(--score-25-50) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 50 && score_to_use[property] < 75)
-                    circleRing.style.background = `conic-gradient(var(--score-50-75) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 75)
-                    circleRing.style.background = `conic-gradient(var(--score-75-100) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
+            })
 
-                circles.appendChild(circleRing)
+            console.log("CRITERAI MAP", criteriaScoreMap)
+
+            for (const criteriaScore in criteriaScoreMap) {
+                console.log("ASDi ", criteriaScore)
+                score_to_use[criteriaScore] = criteriaScoreMap[criteriaScore]
+
             }
 
+            console.log(score_to_use)
         }
+
+
+        let numCircle = 0
+        const linesOfText = [
+            `Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`,
+            `Number of students in overcrowding: ${score_to_use["sOverCap"]}`,
+            `Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`,
+            `Number of features wasted: ${score_to_use["rCaracWasted"]}`,
+            `Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`,
+            `Number of features wasted: ${score_to_use["cCaracNotFulfilled"]}`,
+            `Capacity wasted with matches: ${score_to_use["rCapWasted"]}`
+        ];
 
         const moreinfoBtn = document.createElement("button")
         moreinfoBtn.classList.add("more-info-btn")
-
         const moreInfoDiv = document.createElement("div")
         moreInfoDiv.classList.add("more-info")
 
@@ -629,74 +651,107 @@ function printObjectsTable(objObjects, title, score, last) {
         moreinfoBtn.appendChild(infoIcon)
 
         moreInfoDiv.style.display = 'none'
-        const linesOfText = [
-            [`Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`],
-            [`Number of students in overcrowding: ${score_to_use["sOverCap"]}`],
-            [`Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`],
-            [`Number of features wasted: ${score_to_use["rCaracWasted"]}`],
-            [`Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`],
-            [`Number of features wasted: ${score_to_use["cCaracNotFulfilled"]}`],
-            [`Capacity wasted with matches: ${score_to_use["rCapWasted"]}`]
-        ];
 
-        linesOfText.forEach(line => {
+        for (let property in score_to_use) {
+
             const spanElement = document.createElement('span');
+            spanElement.style.color = "var(--score-default)"
 
-            if (Array.isArray(line)) {
-                let changed = 0;
-                if (line[0] === `Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`) {
+            switch (property){
+                case "cOverCap" :
+                    console.log("hello")
+                    numCircle ++
+                    spanElement.textContent = linesOfText[0] + ` (${numCircle}º Circle) `;
+                    break;
+                case "cWithCar" :
+                    numCircle++
+                    spanElement.textContent = linesOfText[2] + ` (${numCircle}º Circle) `;
+                    break;
+                case "sOverCap" :
+                    spanElement.textContent = linesOfText[1];
+                    break;
+                case "rCaracWasted" :
+                    spanElement.textContent = linesOfText[3];
+                    break;
+                case "cCaracNotFulfilled" :
+                    spanElement.textContent = linesOfText[5];
+                    break;
+                case "rCapWasted" :
+                    spanElement.textContent = linesOfText[6];
+                    break;
+                case "cWithRoom" :
+                    numCircle++
+                    spanElement.textContent = linesOfText[4] + ` (${numCircle}º Circle) `;
+                    break;
+                default :
+                    if(score_to_use[property]["inequality"] === true) {
+                        numCircle++
+                        spanElement.textContent = `${property}: ${(score_to_use[property]["criteriaScore"] / 100) * classesTotal}/${classesTotal}  (${numCircle}º Circle) `;
+                    }else{
+                        spanElement.textContent = `${property}: ${score_to_use[property]["criteriaScore"]}`;
+                    }
 
-                    if (score_to_use["cOverCap"] < 25)
-                        spanElement.style.color = "var(--score-0-25)"
-                    if (score_to_use["cOverCap"] >= 25 && score_to_use["cOverCap"] < 50)
-                        spanElement.style.color = "var(--score-25-50)"
-                    if (score_to_use["cOverCap"] >= 50 && score_to_use["cOverCap"] < 75)
-                        spanElement.style.color = "var(--score-50-75)"
-                    if (score_to_use["cOverCap"] >= 75)
-                        spanElement.style.color = "var(--score-75-100)"
-                    spanElement.textContent = line[0] + " (First Score Circle) ";
-                    spanElement.style.fontWeight = 'bold'
-                    changed = 1
-                }
-
-                if (line[0] === `Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`) {
-                    if (score_to_use["cWithCar"] < 25)
-                        spanElement.style.color = "var(--score-0-25)"
-                    if (score_to_use["cWithCar"] >= 25 && score_to_use["cWithCar"] < 50)
-                        spanElement.style.color = "var(--score-25-50)"
-                    if (score_to_use["cWithCar"] >= 50 && score_to_use["cWithCar"] < 75)
-                        spanElement.style.color = "var(--score-50-75)"
-                    if (score_to_use["cWithCar"] >= 75)
-                        spanElement.style.color = "var(--score-75-100)"
-                    spanElement.textContent = line[0] + " (Second Score Circle) ";
-                    spanElement.style.fontWeight = 'bold'
-                    changed = 1
-                }
-
-                if (line[0] === `Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`) {
-                    if (score_to_use["cWithRoom"] < 25)
-                        spanElement.style.color = "var(--score-0-25)"
-                    if (score_to_use["cWithRoom"] >= 25 && score_to_use["cWithRoom"] < 50)
-                        spanElement.style.color = "var(--score-25-50)"
-                    if (score_to_use["cWithRoom"] >= 50 && score_to_use["cWithRoom"] < 75)
-                        spanElement.style.color = "var(--score-50-75)"
-                    if (score_to_use["cWithRoom"] >= 75)
-                        spanElement.style.color = "var(--score-75-100)"
-                    spanElement.textContent = line[0] + " (Third Score Circle) ";
-                    spanElement.style.fontWeight = 'bold'
-                    changed = 1
-                }
-
-                if (changed === 0) {
-                    spanElement.textContent = line[0];
-                    spanElement.style.color = 'white';
-                }
+                    break;
 
             }
 
+
+            if (Array.isArray(score_to_use[property]) || score_to_use[property]["inequality"] === true){
+                console.log("Bicha", score_to_use[property])
+                const circleRing = document.createElement('div')
+                circleRing.classList.add("circle-ring")
+                const backgroundCircle = document.createElement('div')
+                backgroundCircle.classList.add("circle-bg")
+                const circleDisplay = document.createElement('div')
+                circleDisplay.classList.add("circle-display")
+                const percentageNumber = document.createElement("h1")
+                percentageNumber.classList.add("circle-score-text")
+
+                if(!Array.isArray(score_to_use[property])){
+                    percentageNumber.textContent = score_to_use[property]["criteriaScore"]
+
+                }else{
+                    percentageNumber.textContent = score_to_use[property]
+                }
+
+
+
+                circleDisplay.appendChild(percentageNumber)
+                backgroundCircle.appendChild(circleDisplay)
+                circleRing.appendChild(backgroundCircle)
+
+                let scoretemp = Number(percentageNumber.textContent)
+
+                console.log("A E", scoretemp)
+                console.log("Pls ", score_to_use)
+
+                switch (true) {
+                    case scoretemp < 25:
+                        if (scoretemp <= 2)
+                            scoretemp = 2;
+                        circleRing.style.background = `conic-gradient(var(--score-0-25) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                        spanElement.style.color = "var(--score-0-25)"
+                        break;
+                    case scoretemp < 50:
+                        circleRing.style.background = `conic-gradient(var(--score-25-50) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                        spanElement.style.color = "var(--score-25-50)"
+                        break;
+                    case scoretemp < 75:
+                        circleRing.style.background = `conic-gradient(var(--score-50-75) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                        spanElement.style.color = "var(--score-50-75)"
+                        break;
+                    case scoretemp >= 75:
+                        circleRing.style.background = `conic-gradient(var(--score-75-100) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                        spanElement.style.color = "var(--score-75-100)"
+                        break;
+                    default:
+                        break;
+                }
+                circles.appendChild(circleRing)
+            }
+
             moreInfoDiv.appendChild(spanElement);
-            //moreInfoDiv.appendChild(document.createElement('br')); // Add line break between spans
-        });
+        }
 
 
         moreinfoBtn.addEventListener('click', function () {
@@ -724,7 +779,6 @@ function printObjectsTable(objObjects, title, score, last) {
     document.getElementById("display-area").appendChild(resultContainer);
 
     if (last){
-        console.log("HEY????????")
         isLoading = 0
         toggleLoading()
     }

@@ -35,6 +35,71 @@ document.querySelectorAll(".drop-zone__input").forEach((inputElement) => {
     });
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+    const messageInput = document.getElementById('messageInput');
+    const messageList = document.getElementById('messageList');
+    const addMessageIcon = document.getElementById('addMessageIcon');
+
+    messageInput.addEventListener('input', function () {
+        const inputValue = messageInput.value.trim();
+        const hasValidInput = /^(?:(?:[\w\s]+|[^\d\s]+)\s[+\-*/><=]\s(?:[\w\s]+|[^\d\s]+)(?:\s[+\-*/><=]\s(?:[\w\s]+|[^\d\s]+))*\s*)+$/.test(inputValue);
+        addMessageIcon.style.display = hasValidInput ? 'block' : 'none';
+    });
+
+    window.deleteLogItem = function (deleteIcon) {
+        const logItem = deleteIcon.parentNode;
+        messageList.removeChild(logItem);
+    };
+
+    window.addMessage = function () {
+        if (messageInput.value.trim() !== '') {
+            console.log("AE", messageInput.value)
+            if(!validateCriteria(messageInput.value)) {
+                alert(`Invalid criterion!`)
+                return
+            }
+
+            const logItem = document.createElement('div');
+            logItem.className = 'logItem';
+            logItem.innerHTML = `
+        <span>${messageInput.value}</span>
+        <span class="deleteIcon" onclick="deleteLogItem(this)"><i class="fa-solid fa-trash"></i></span>
+      `;
+            messageList.appendChild(logItem);
+            messageInput.value = '';
+
+            // Scroll to the bottom of the messageList
+            messageList.scrollTop = messageList.scrollHeight;
+            addMessageIcon.style.display = 'none';
+        }
+    };
+});
+
+function validateCriteria(criteria) {
+    // Extract individual terms from the criteria
+    const terms = criteria.split(/\s*([+\-*/><=])\s*/);
+    const filteredTerms = terms.filter(term => !/^[+\-*/><=]$/.test(term));
+    // Check if each term is a valid CSV column or a number
+    for (let i = 0; i < filteredTerms.length; i += 2) {
+        const term = terms[i].trim();
+        if (!isValidCSVColumn(term) && isNaN(Number(term))) {
+            return false; // Invalid term
+        }
+    }
+
+    return true; // All terms and operators are valid
+}
+
+function isValidCSVColumn(column) {
+    const headers = ["Curso",	"Unidade de execução",	"Turno",	"Turma",	"Inscritos no turno", "Dia da Semana",	"Início", "Fim",	"Dia",	"Características da sala pedida para a aula",	"Sala da aula",	"Lotação",	"Características reais da sala"]
+
+    console.log("Column", column)
+    console.log(headers.includes(column))
+
+    // Check if the provided column is a valid column name
+    return headers.includes(column);
+}
+
 function updateOptions(menuId, columnNames) {
     // Update the options for all select elements within the drop zone group
     const menu = document.getElementById(menuId);
@@ -188,6 +253,13 @@ function saveConfigurations() {
 
         // Add more configurations as needed
     };
+
+    const logItems = document.querySelectorAll('.logItem');
+    const logText = []
+    logItems.forEach((logItem, index) => {
+        logText.push(logItem.querySelector('span').innerText)
+    });
+    configurations.logItems = logText;
 
     if (configurations.check4) {
         configurations.numberInput = document.getElementById("numberInput").value;
