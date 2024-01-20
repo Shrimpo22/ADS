@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.addMessage = function () {
         if (messageInput.value.trim() !== '') {
-            console.log("AE", messageInput.value)
             if(!validateCriteria(messageInput.value)) {
                 alert(`Invalid criterion!`)
                 return
@@ -79,6 +78,7 @@ function validateCriteria(criteria) {
     // Extract individual terms from the criteria
     const terms = criteria.split(/\s*([+\-*/><=])\s*/);
     const filteredTerms = terms.filter(term => !/^[+\-*/><=]$/.test(term));
+    console.log("Hey?", filteredTerms)
     // Check if each term is a valid CSV column or a number
     for (let i = 0; i < filteredTerms.length; i += 2) {
         const term = terms[i].trim();
