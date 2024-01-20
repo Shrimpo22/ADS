@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     messageInput.addEventListener('input', function () {
         const inputValue = messageInput.value.trim();
-        const hasValidInput = /^(?:(?:[\w\s]+|[^\d\s]+)\s[+\-*/><=]\s(?:[\w\s]+|[^\d\s]+)(?:\s[+\-*/><=]\s(?:[\w\s]+|[^\d\s]+))*\s*)+$/.test(inputValue);
+        const hasValidInput = /^(?:(?:[\w\s]+|[-]?\d+(?:\.\d+)?|[^\d\s]+)\s[+\-*/><=]=?\s(?:[\w\s]+|[-]?\d+(?:\.\d+)?|[^\d\s]+)(?:\s[+\-*/><=]=?\s(?:[\w\s]+|[-]?\d+(?:\.\d+)?|[^\d\s]+))*\s*)+$/.test(inputValue);
         addMessageIcon.style.display = hasValidInput ? 'block' : 'none';
     });
 

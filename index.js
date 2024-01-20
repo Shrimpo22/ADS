@@ -574,10 +574,8 @@ function printObjectsTable(objObjects, title, score, last) {
 
                     // Parse the expression
                     const quotedCriteriaInput = criteria.replace(/\s/g, '');
-                    console.log("uwu", quotedCriteriaInput)
                     const parsedCriteria = math.parse(quotedCriteriaInput);
 
-                    console.log("AYO?", parsedCriteria, parsedCriteria.op)
                     // Check if the parsed expression is an inequality
                     if (['<', '<=', '>', '>=', '!=', '=='].includes(parsedCriteria.op)) {
                         inequality = true
@@ -587,25 +585,19 @@ function printObjectsTable(objObjects, title, score, last) {
                     objObjects.forEach(object => {
                         const terms = criteria.split(/\s*([+\-*/><=])\s*/);
                         const filteredTerms = terms.filter(term => !/^[+\-*/><=]$|^\d+$/.test(term));
-                        console.log(filteredTerms)
-
                         const scope={}
 
                         filteredTerms.forEach(term => scope[term.replace(/\s/g, '')] = isNaN(Number(object[term])) ? 0 : Number(object[term]))
-                        console.log("SCope ", scope)
                         const evaluation = math.evaluate(quotedCriteriaInput, scope)
-                        console.log("Ev", evaluation)
-
                         if(inequality) {
                             if (evaluation === true)
                                 criteriaScore++
                         } else
                             criteriaScore += evaluation
-                        console.log("WHI")
                     })
 
                     if (inequality)
-                        criteriaScore = Math.round(((criteriaScore / classesTotal) * 100))
+                        criteriaScore = (criteriaScore / classesTotal) * 100
 
                     criteriaScoreMap[criteria] = {inequality, criteriaScore}
 
@@ -617,15 +609,10 @@ function printObjectsTable(objObjects, title, score, last) {
 
             })
 
-            console.log("CRITERAI MAP", criteriaScoreMap)
-
             for (const criteriaScore in criteriaScoreMap) {
-                console.log("ASDi ", criteriaScore)
                 score_to_use[criteriaScore] = criteriaScoreMap[criteriaScore]
 
             }
-
-            console.log(score_to_use)
         }
 
 
@@ -686,7 +673,7 @@ function printObjectsTable(objObjects, title, score, last) {
                 default :
                     if(score_to_use[property]["inequality"] === true) {
                         numCircle++
-                        spanElement.textContent = `${property}: ${(score_to_use[property]["criteriaScore"] / 100) * classesTotal}/${classesTotal}  (${numCircle}º Circle) `;
+                        spanElement.textContent = `${property}: ${Math.round((score_to_use[property]["criteriaScore"] / 100) * classesTotal)}/${classesTotal}  (${numCircle}º Circle) `;
                     }else{
                         spanElement.textContent = `${property}: ${score_to_use[property]["criteriaScore"]}`;
                     }
@@ -697,7 +684,6 @@ function printObjectsTable(objObjects, title, score, last) {
 
 
             if (Array.isArray(score_to_use[property]) || score_to_use[property]["inequality"] === true){
-                console.log("Bicha", score_to_use[property])
                 const circleRing = document.createElement('div')
                 circleRing.classList.add("circle-ring")
                 const backgroundCircle = document.createElement('div')
@@ -708,7 +694,7 @@ function printObjectsTable(objObjects, title, score, last) {
                 percentageNumber.classList.add("circle-score-text")
 
                 if(!Array.isArray(score_to_use[property])){
-                    percentageNumber.textContent = score_to_use[property]["criteriaScore"]
+                    percentageNumber.textContent = Math.round(Number(score_to_use[property]["criteriaScore"]))
 
                 }else{
                     percentageNumber.textContent = score_to_use[property]
@@ -721,9 +707,6 @@ function printObjectsTable(objObjects, title, score, last) {
                 circleRing.appendChild(backgroundCircle)
 
                 let scoretemp = Number(percentageNumber.textContent)
-
-                console.log("A E", scoretemp)
-                console.log("Pls ", score_to_use)
 
                 switch (true) {
                     case scoretemp < 25:
