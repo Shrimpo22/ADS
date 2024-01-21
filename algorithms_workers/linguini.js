@@ -1,30 +1,102 @@
+/**
+ * Maximum number of concurrent workers, derived from navigator's hardware concurrency.
+ * @constant {number}
+ */
 const DN_MAX_CONCURRENT_WORKERS = navigator.hardwareConcurrency - 1;
 let dnWorkerPool = [];
 
 let dnScheduleMapByDate = []
 let dnTotalDays = 0;
 let lgroomsObjects = []
+/**
+ * Holds the final matches of the algorithm.
+ * @type {Array}
+ */
 const dnMainMatches = []
+/**
+ * Holds the next day to match classes to rooms.
+ * @type {number}
+ */
 let dnCurrDay = 0
 
+/**
+ * Number of classes assigned to a room under its capacity.
+ *
+ * @type {number}
+ * @description Tracks the count of classes assigned to a room under its capacity during the algorithm.
+ */
 var dnNrOverCap = 0;
+/**
+ * Number of students assigned to a room under its capacity.
+ *
+ * @type {number}
+ * @description Tracks the count of students assigned to a room under its capacity during the algorithm.
+ */
 var dnNrStuOverCap = 0;
+/**
+ * Number of classes with no characteristics matched.
+ *
+ * @type {number}
+ * @description Tracks the count of classes with no characteristics matched during the algorithm.
+ */
 var dnWithouthCarac = 0;
+/**
+ * Number of classes not assigned due to a lack of available rooms.
+ *
+ * @type {number}
+ * @description Tracks the count of classes not assigned due to a lack of available rooms during the Greedy Algorithm.
+ */
 var dnWithouthRoom = 0;
+/**
+ * Number of characteristics wasted in the assignment process.
+ *
+ * @type {number}
+ * @description Tracks the count of characteristics wasted in the assignment process during the algorithm.
+ */
 var dnCaracWasted = 0;
+/**
+ * Number of capacity wasted in the assignment process.
+ *
+ * @type {number}
+ * @description Tracks the count of capacity wasted in the assignment process during the algorithm.
+ */
 var dnCapWasted = 0;
+/**
+ * Number of characteristics not fulfilled.
+ *
+ * @type {number}
+ * @description Tracks the count of characteristics not fulfilled during the algorithm.
+ */
 var dnCaracNotFulfilled = 0;
+
 let linglast = false
+
 let lcapValue = 0;
 let lcaracGeneral = 0;
 let lcaracSpecial = 0;
 let lcaracName = "";
 
-function linguini(rO, scheduleObjects, debug, l, capValue, a, b ,c) {
+/**
+ * Initiates the Linguini algorithm.
+ *
+ * @param {Object[]} rO - An array of room objects.
+ * @param {Map} scheduleObjects - A Map containing the schedule by date.
+ * @param {boolean} debug - A flag for debugging.
+ * @param {boolean} l - A flag indicating whether this is the last algorithm to run.
+ * @param {Number} capValue - The weight given to the capacity wasted in a match.
+ * @param {Number} featurePoints - The points given for matching a feature.
+ * @param {Number} specialFeaturePoints - The points given for matching a special feature {@link specialFeatureName}.
+ * @param {String} specialFeatureName -The name of the special feature.
+ *
+ * @description
+ * This function serves the purpose of initiating the linguiniWorkers pool based on the {@link MAX_CONCURRENT_WORKERS}.
+ * It then calls {@link startNextDNWorker}.
+ */
+function linguini(rO, scheduleObjects, debug, l, capValue, featurePoints, specialFeaturePoints ,specialFeatureName) {
     lcapValue = capValue
-    lcaracGeneral = a
-    lcaracSpecial = b
-    lcaracName = c
+    lcaracGeneral = featurePoints
+    lcaracSpecial = specialFeaturePoints
+    lcaracName = specialFeatureName
 
     if(!scheduleObjects)
         return
@@ -43,6 +115,14 @@ function linguini(rO, scheduleObjects, debug, l, capValue, a, b ,c) {
     startNextDNWorker();
 }
 
+/**
+ * Sends a message to a worker with classes for a given day and the capacity map.
+ * Upon receiving the worker's result, stores score variables and the matches in {@link dnMainMatches}.
+ * Checks if there are any days left.
+ * If there are, calls {@link startNextDNWorker}; otherwise, finishes the algorithm by calling {@link printObjectsTable}.
+ *
+ * @param {number} dayIndex - Index of the day.
+ */
 function runDNAlgorithmForDay(dayIndex) {
     const dnWorker = dnWorkerPool.pop();
     let i=0
@@ -114,6 +194,10 @@ function runDNAlgorithmForDay(dayIndex) {
     };
 }
 
+/**
+ * Checks if a worker is available. If available, calls {@link runDNAlgorithmForDay} with the next day
+ * to assign classes stored at {@link dnCurrDay}.
+ */
 function startNextDNWorker() {
     if (dnWorkerPool.peek()) {
         runDNAlgorithmForDay(dnCurrDay);

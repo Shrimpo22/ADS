@@ -1,5 +1,18 @@
 let kowAllocatedRooms = {};
 
+/**
+ * Handles the 'message' event and performs room allocation based on the provided data.
+ *
+ * @param {MessageEvent} e - The message event containing the data for room allocation.
+ *
+ * @description
+ * Allocates rooms to classes based on a calculated value for each room.
+ * Iterates over each class in the schedule for the day
+ * ({@link scheduleForDay}), filters the {@link roomsObjects} by room availability, assigns a value to each one using {@link calculateKowRoomValue}, and finally selects the room
+ * with the highest calculated value for allocation.
+ *
+ * @returns {void}
+ */
 onmessage = function (e) {
     const allocatedRooms = {}
     var nrOverCapCounter = 0;
@@ -35,7 +48,7 @@ onmessage = function (e) {
                 const name = ro['Nome sala'];
                 const cap = ro["Capacidade Normal"];
                 const carac = ro["Características"]
-                const value = calculateRoomValue(ro['Capacidade Normal'], requiredCapacity, ro['Características'], requirementsList);
+                const value = calculateKowRoomValue(ro['Capacidade Normal'], requiredCapacity, ro['Características'], requirementsList, scarcityMap);
                 return {name, cap, carac, value};
             });
 
@@ -87,6 +100,14 @@ onmessage = function (e) {
         caracNotFulfilledCounter,
         capWastedCounter });
 
+    /**
+     * Marks a room as unavailable for a specified time period.
+     * @param {string} roomName - The name of the room.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @param {boolean} debug - Flag for debugging.
+     */
     function markAsUnavailable(roomName, date, startTime, endTime, debug) {
 
         const [day, month, year] = date.split('/');
@@ -122,6 +143,15 @@ onmessage = function (e) {
         debug && console.log(allocatedRooms['2022']['12']['02'])
     }
 
+    /**
+     * Checks if a room is available for a specified time period.
+     * @param {string} roomName - The name of the room.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @param {boolean} debug - Flag for debugging.
+     * @returns {boolean} - True if the room is available, false otherwise.
+     */
     function isRoomAvailable(roomName, date, startTime, endTime, debug) {
         const [day, month, year] = date.split('/');
         let currHour = startTime.split(':').slice(0, 2).join(':');
@@ -148,6 +178,13 @@ onmessage = function (e) {
 
     }
 
+    /**
+     * Compares two times and returns the result.
+     * @param {string} time1 - The first time to compare.
+     * @param {string} time2 - The second time to compare.
+     * @param {boolean} debug - Flag for debugging.
+     * @returns {number} - -1 if time1 is earlier, 1 if time2 is earlier, 0 if equal.
+     */
     function compareTimes(time1, time2, debug) {
         debug && console.log("Compare " + time1 + " " + time2)
         // Convert times to minutes since midnight
@@ -167,22 +204,39 @@ onmessage = function (e) {
         }
     }
 
-    function calculateRoomValue(capacity, requiredCapacity, characteristics, requirementsList) {
-        let featuresValue = 0
-        let featuresMatchedValue = 0
-        let featuresWastedValue = 0
-        const ratioValue = (capacity/requiredCapacity) - Math.abs(capacity-requiredCapacity)
 
-        for (const characteristic of characteristics) {
-            if(requirementsList.includes(characteristic)){
+}
 
-                featuresMatchedValue+= scarcityMap[characteristic]
-            }
-            else{
-                featuresWastedValue+= scarcityMap[characteristic]
-            }
+/**
+ * Calculates the value for a room based on its capacity, required capacity, characteristics, and requirements list.
+ *
+ * The value is determined by combining a ratio value, representing the capacity utilization,
+ * with a features value that considers the scarcity of matched and wasted characteristics.
+ * The ratio value is calculated as (capacity/requiredCapacity) - Math.abs(capacity - requiredCapacity),
+ * and the features value is computed by weighing the scarcity of matched characteristics and penalizing wasted characteristics.
+ *
+ * @param {number} capacity - The capacity of the room.
+ * @param {number} requiredCapacity - The required capacity for the room.
+ * @param {string[]} characteristics - The characteristics of the room.
+ * @param {string[]} requirementsList - The list of specific requirements for the room.
+ * @param {Object} scarcityMap - A map containing the scarcity values for each characteristic.
+ * @returns {number} - The calculated value for the room.
+ */
+function calculateKowRoomValue(capacity, requiredCapacity, characteristics, requirementsList, scarcityMap) {
+    let featuresValue = 0
+    let featuresMatchedValue = 0
+    let featuresWastedValue = 0
+    const ratioValue = (capacity/requiredCapacity) - Math.abs(capacity-requiredCapacity)
+
+    for (const characteristic of characteristics) {
+        if(requirementsList.includes(characteristic)){
+
+            featuresMatchedValue+= scarcityMap[characteristic]
         }
-        featuresValue = featuresMatchedValue - Math.pow(featuresWastedValue,2)
-        return ratioValue + featuresValue;
+        else{
+            featuresWastedValue+= scarcityMap[characteristic]
+        }
     }
+    featuresValue = featuresMatchedValue - Math.pow(featuresWastedValue,2)
+    return ratioValue + featuresValue;
 }

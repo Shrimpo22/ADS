@@ -5,35 +5,74 @@ window.addEventListener('load', loadConfigurations);
  * @type {HTMLFormElement}
  */
 const csvForm = document.getElementById("csvForm");
-
 /**
  * Represents the input element for rooms CSV file.
  * @type {HTMLInputElement}
  */
 const roomsCSV = document.getElementById("roomsCSV");
-
 /**
  * Represents the input element for schedule CSV file.
  * @type {HTMLInputElement}
  */
 const scheduleCSV = document.getElementById("scheduleCSV");
-
 /**
  * Object to store allocatedRooms data.
  * @type {Object}
  */
 var separatorInput
-
+/**
+ * Number of rows to display when printing object.
+ * @type {number}
+ */
 var maxRowsToDisplay = 0;
-
-let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
-
+/**
+ * Represents the processing state of the code.
+ * Use in conjunction with {@link toggleLoading}.
+ *
+ * @type {number} - Set to 1 to initiate loading, set to 0 to stop.
+ */
+let isLoading = 1;
+/**
+ * Number of total rooms.
+ * @type {number}
+ */
 let roomsTotal = 0
+/**
+ * Number of total classes.
+ * @type {number}
+ */
 let classesTotal = 0
-
+/**
+ * Represents the id for the new calendar to create.
+ * Simple iterator.
+ * @type {number}
+ */
 let globalI = 1
-
+/**
+ * Holds an array of criteria to be used in the application.
+ *
+ * @type {Array}
+ */
 let criteriasToUse = []
+
+
+/**
+ * Loads configurations from the browser's local storage, if available.
+ * Assigns the saved values to corresponding HTML elements for the following configurations:
+ *
+ * - check1
+ * - check2
+ * - check3
+ * - check4
+ * - timeFormatSelector
+ * - dayFormatSelector
+ * - separatorInput
+ * - maxRows
+ * - logItems (criteria)
+ *
+ * @function
+ * @returns {void}
+ */
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
 
@@ -45,13 +84,11 @@ function loadConfigurations() {
         document.getElementById('dayFormatSelector').value = configurations.dayFormat;
         document.getElementById('separatorInput').value = configurations.separatorInput;
         document.getElementById('maxRows').value = configurations.maxRows
-        // Set more configurations as needed
     }
 
     if(configurations.logItems){
-        console.log("hey", configurations.logItems)
         const logItemsArray = configurations.logItems;
-        const logItemsContainer = document.getElementById('messageList'); // Replace with the actual ID of your log items container
+        const logItemsContainer = document.getElementById('messageList');
 
         logItemsArray.forEach((logItemText, index) => {
             const logItem = document.createElement('div');
@@ -75,9 +112,21 @@ function loadConfigurations() {
 }
 
 /**
- * Event listener for form submission to handle CSV file processing.
+ * Event handler for the submission of the CSV form.
+ *
+ * @function
+ * @param {Event} e - The form submission event.
+ * @returns {void}
+ *
+ * @description
+ * This function handles the form submission event for the CSV form. It prevents the default form submission
+ * behavior, retrieves values from various form elements such as dropdowns and checkboxes, validates the form
+ * inputs, saves configurations {@link saveConfigurations}, and triggers the creation of objects from CSV files {@link createObjects}. The function then prints
+ * tables for rooms and schedule objects, performs sorting and grouping, and initiates specific algorithms
+ * based on user-selected checkboxes (greedyCheck, highlowCheck, ratCheck, linguiniCheck). Loading indicators
+ * are toggled during the processing, and the results are displayed on the HTML document.
  */
-csvForm.addEventListener("submit", function (e) {
+function handleCsvFormSubmission(e) {
     e.preventDefault();
     var roomCapacityCol = document.getElementById("menu1Selection").value;
     var roomNameCol = document.getElementById("menu12Selection").value;
@@ -92,13 +141,11 @@ csvForm.addEventListener("submit", function (e) {
 
     separatorInput = document.getElementById('separatorInput').value;
 
-// Retrieve values from checkboxes
     var greedyCheck = document.getElementById("check1").checked;
     var highlowCheck = document.getElementById("check2").checked;
     var ratCheck = document.getElementById("check3").checked;
     var linguiniCheck = document.getElementById('check4').checked;
-    var kowalskiCheck = document.getElementById('check5').checked;
-
+    var kowalskiCheck = document.getElementById('check5').checked
     var featureSelected = "a"
 
     if(linguiniCheck) {
@@ -106,11 +153,8 @@ csvForm.addEventListener("submit", function (e) {
         var mainCaracGeneralValue = document.getElementById('numberInput2').value
         var mainSpecialCaracValue = document.getElementById('numberInput3').value
         var selectElement = document.getElementById("linguiniSelection");
-        // Get the selected index
         var selectedIndex = selectElement.selectedIndex;
-        // Get the selected option
         var selectedOption = selectElement.options[selectedIndex];
-        // Get the text content of the selected option
         var mainSpecialCaracName = selectedOption.text
         featureSelected = selectElement.value
     }
@@ -121,7 +165,6 @@ csvForm.addEventListener("submit", function (e) {
     maxRowsToDisplay = document.getElementById("maxRows").value
     if (maxRowsToDisplay === ""){
         alert("Error: Max Rows to Display is Blank! Please choose a number.");
-        // Do not proceed with form submission
         return;
     }
 
@@ -132,9 +175,7 @@ csvForm.addEventListener("submit", function (e) {
     if (
         [roomCapacityCol, roomNameCol, roomCharacFirstCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol, featureSelected].includes("")
     ) {
-        // Display error message
         alert("Error: One or more selections are blank. Please choose an option.");
-        // Do not proceed with form submission
         return;
     }
 
@@ -149,9 +190,7 @@ csvForm.addEventListener("submit", function (e) {
     roomVariablesMap[document.getElementById("menu1Selection").value] = "Capacidade Normal";
     roomVariablesMap[document.getElementById("menu12Selection").value] = "Nome sala";
     roomVariablesMap[document.getElementById("menu13Selection").value] = "Edifício";
-    //roomVariablesMap[document.getElementById("menu14Selection").value] = "Characteristics Last Column";
 
-// HashMap for ucs variables
     const ucVariablesMap = {};
     ucVariablesMap[document.getElementById("menu2Selection").value] = "Início";
     ucVariablesMap[document.getElementById("menu22Selection").value] = "Fim";
@@ -164,15 +203,15 @@ csvForm.addEventListener("submit", function (e) {
     const schedule_input = scheduleCSV.files[0];
 
     const logs = document.querySelectorAll('.logItem span:first-child');
-    const criterias = Array.from(logs).map(log => log.textContent);
-    criteriasToUse =[...new Set(criterias)];
+    const criteria = Array.from(logs).map(log => log.textContent);
+    criteriasToUse =[...new Set(criteria)];
 
     isLoading = 1
     toggleLoading()
 
-    Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
+    Promise.all([createObjects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), createObjects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
-            console.log("Read")
+
             if (roomsObjects.length === 0 || scheduleObjects.length === 0) {
                 alert("One of the csv files is possibly blank or missing required columns!")
                 isLoading = 0
@@ -191,7 +230,6 @@ csvForm.addEventListener("submit", function (e) {
 
             scheduleObjects.sort(compareObjectsByDateAndTime);
             scheduleObjects.forEach((obj) => {
-                // Extract the date from the current object
                 const date = obj['Dia'];
                 // Check if the date is already a key in the map
                 if (objectsByDateMap.has(date)) {
@@ -215,14 +253,10 @@ csvForm.addEventListener("submit", function (e) {
             if (kowalskiCheck)
                 last = 5
 
-
-
-
             if (greedyCheck) {
                 isLoading = 1
                 toggleLoading()
                 if(last === 1){
-                    console.log("Greedy is the last")
                     aldrich(roomsObjects, objectsByDateMap, true)
                 }else
                     aldrich(roomsObjects, objectsByDateMap, false)
@@ -231,7 +265,6 @@ csvForm.addEventListener("submit", function (e) {
                 isLoading = 1
                 toggleLoading()
                 if(last === 2){
-                    console.log("Dexter is the last")
                     dexter(roomsObjects, objectsByDateMap, true)
                 }else
                     dexter(roomsObjects, objectsByDateMap, false)
@@ -240,17 +273,14 @@ csvForm.addEventListener("submit", function (e) {
                 isLoading = 1
                 toggleLoading()
                 if(last === 3){
-                    console.log("Ratatouille is the last")
                     ratatouille(roomsObjects, objectsByDateMap,false, true)
                 }else
                     ratatouille(roomsObjects, objectsByDateMap,false, false)
             }
-
             if (linguiniCheck){
                 isLoading = 1
                 toggleLoading()
                 if(last === 4){
-                    console.log("Linguine is the last")
                     linguini(roomsObjects, objectsByDateMap, false, true, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
                 }else
                     linguini(roomsObjects, objectsByDateMap, false, false, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
@@ -274,17 +304,32 @@ csvForm.addEventListener("submit", function (e) {
             alert("Error reading " + error)
         });
 
-});
-
+}
+csvForm.addEventListener("submit", handleCsvFormSubmission)
 
 /**
- * Reads a CSV file and creates objects based on its content.
+ * Asynchronously creates objects from a CSV file using specified configurations. Utilizes Web Workers for parallel processing.
  *
+ * @function
  * @param {File} csvFile - The CSV file to be processed.
- * @param {boolean} debug - Flag to enable debugging output.
- * @returns {Promise<Array<Object>>} A promise that resolves with an array of objects.
+ * @param {Object} colMap - An object mapping column indices to custom names.
+ * @param {string} separatorInput - The separator used in the CSV file.
+ * @param {string} timeFormat - The format of time values in the CSV.
+ * @param {string} dayFormat - The format of day values in the CSV.
+ * @param {Array<number>} timeCols - Array of indices representing time columns.
+ * @param {Array<number>} dateCols - Array of indices representing date columns.
+ * @param {boolean} debug - A flag indicating whether to enable debug mode.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of objects created from the CSV data.
+ *
+ * @description
+ * This function utilizes Web Workers to enable parallel processing of the CSV data for improved performance.
+ * Each worker is assigned a distinct chunk of data, and the processed results are communicated back to the
+ * main thread. The worker script is specified as 'algorithms_workers/readerWorker.js'. The function returns
+ * a Promise that resolves to an array of objects created from the CSV data after all workers have completed
+ * their tasks.
+ *
  */
-function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, timeCols, dateCols, debug) {
+function createObjects(csvFile, colMap, separatorInput, timeFormat, dayFormat, timeCols, dateCols, debug) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -309,15 +354,12 @@ function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, 
                 chunks.push(chunk);
             }
 
-            const workers = [];
             let workersCount = 0
             const objects = []
 
             chunks.forEach((chunk, index) => {
-                const worker = new Worker('algorithms_workers/readerWorker.js'); // Specify the path to your worker script
+                const worker = new Worker('algorithms_workers/readerWorker.js');
                 workersCount++
-                workers.push(worker);
-
 
                 worker.onmessage = function (event) {
                     workersCount--
@@ -371,7 +413,6 @@ function findConflictingClasses(classes, debug) {
             conflictChain.push(classA);
             for (let j = i + 1; j < classes.length; j++) {
                 const classB = classes[j];
-                // Check for time overlap
                 if (isTimeOverlap(classA, classB)) {
                     debug && console.log("Class A: ", classA, " Class B: ", classB);
                     conflictChain.push(classB);
@@ -388,7 +429,6 @@ function findConflictingClasses(classes, debug) {
                         const classB = classes[j];
                         debug && console.log("Class B: ", classB);
                         if (!conflictChain.includes(classB)) {
-                            // Check for time overlap
                             if (isTimeOverlap(classK, classB)) {
                                 debug && console.log("Class A chain: ", classK, " Class B chain: ", classB);
                                 conflictChain.push(classB);
@@ -433,24 +473,36 @@ function findConflictingClasses(classes, debug) {
 }
 
 /**
- * Prints a table of objects to a specified result container.
+ * Displays a table of objects in the HTML document with optional title, score information, and download functionality.
  *
- * @param {Array<Object>} objObjects - Array of objects to be displayed.
- * @param {HTMLElement} resultContainer - HTML element to display the table.
+ * @function
+ * @param {Array<Object>} objObjects - An array of objects to be displayed in the table.
+ * @param {string} title - The title to be displayed above the table.
+ * @param {Object} score - Optional score information to be displayed alongside the table.
+ * @param {boolean} last - A flag indicating if this is the last table to be displayed, used for loading state management.
+ * @returns {void}
+ *
+ * @description
+ * This function dynamically creates an HTML table from an array of objects and displays it in the document.
+ * It can include a title, score information, and a download button. The table is appended to the 'display-area'
+ * HTML element. If no objects are provided, a message indicating that there is nothing to display is shown.
+ * If the score parameter is provided, the function calculates additional scores based on specified criteria, if there are any,
+ * using a Web Worker ('algorithms_workers/CriteriaWorker.js') and displays them alongside the table.
+ * A download button is also included to download the displayed data as a CSV file. If the last parameter is true,
+ * it indicates that this is the last table to be displayed, and the loading state is toggled off.
+ *
  */
 function printObjectsTable(objObjects, title, score, last) {
 
 
     const resultContainer = document.createElement('div')
     resultContainer.classList.add("box")
-    // Check if there are rooms to display
     if (objObjects.length === 0) {
         resultContainer.innerHTML = '<p>Nothing to display <i class="fa-solid fa-face-sad-tear" style="color: white"></i></p>';
         document.getElementById('display-area').appendChild(resultContainer)
         return;
     }
 
-    // Collect all unique keys (columns) from all objects
     const allKeys = objObjects.reduce((keys, obj) => {
         Object.keys(obj).forEach(key => {
             if (!keys.includes(key)) {
@@ -467,7 +519,6 @@ function printObjectsTable(objObjects, title, score, last) {
     titleEl.classList.add('title')
     titleEl.textContent = title
 
-    // Create the table element
     const table = document.createElement('table');
     const tableDiv = document.createElement("div")
     tableDiv.classList.add('table-container');
@@ -498,7 +549,6 @@ function printObjectsTable(objObjects, title, score, last) {
     }
 
 
-    // Create the table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
 
@@ -511,7 +561,6 @@ function printObjectsTable(objObjects, title, score, last) {
     thead.appendChild(headerRow);
     table.appendChild(thead);
     tableDiv.appendChild(table)
-    // Create the table body
     const tbody = document.createElement('tbody');
 
     let itTemp = 0
@@ -520,7 +569,7 @@ function printObjectsTable(objObjects, title, score, last) {
             const row = document.createElement('tr');
             allKeys.forEach(key => {
                 const cell = document.createElement('td');
-                cell.textContent = obj[key] || ''; // Handle cases where a key is not present in an object
+                cell.textContent = obj[key] || '';
                 row.appendChild(cell);
             });
             tbody.appendChild(row);
@@ -529,8 +578,7 @@ function printObjectsTable(objObjects, title, score, last) {
     });
     table.appendChild(tbody);
 
-    // Append the table to the result container
-    resultContainer.innerHTML = ''; // Clear existing content
+    resultContainer.innerHTML = '';
     const headerDiv = document.createElement('div')
     headerDiv.classList.add("header-container")
 
@@ -594,7 +642,6 @@ function printObjectsTable(objObjects, title, score, last) {
                         worker.terminate();
                     };
 
-                    // Send data to the worker
                     worker.postMessage({objObjects, criteria, classesTotal});
                 });
 
@@ -785,9 +832,24 @@ function printObjectsTable(objObjects, title, score, last) {
         }
     }
 }
+
+/**
+ * Downloads the data from an array of objects as a CSV file.
+ *
+ * @function
+ * @param {Array<Object>} objObjects - An array of objects containing the data to be downloaded.
+ * @param {string} title - The title to be used for the downloaded CSV file (optional).
+ * @returns {void}
+ *
+ * @description
+ * This function converts an array of objects into a CSV-formatted string using the specified separator
+ * (assumed to be a global variable named `separatorInput`). It then creates a Blob (Binary Large Object) from
+ * the CSV content and generates a download link for the user. The link is appended to the document body,
+ * programmatically clicked, and then removed from the document.
+ *
+ */
 function downloadCSV(objObjects, title) {
     const csvContent = convertArrayToCSV(objObjects, separatorInput);
-    console.log(csvContent)
     const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
 
@@ -801,23 +863,50 @@ function downloadCSV(objObjects, title) {
     document.body.removeChild(link);
 }
 
+/**
+ * Converts an array of objects into a CSV-formatted string using the specified separator.
+ *
+ * @function
+ * @param {Array<Object>} data - An array of objects containing the data to be converted to CSV.
+ * @param {string} separator - The separator to be used in the CSV-formatted string.
+ * @returns {string} - A CSV-formatted string.
+ *
+ * @description
+ * This function takes an array of objects and a separator as input. It extracts headers from the first
+ * object in the array and creates a CSV-formatted string with the object data. The headers are used as the
+ * first line of the CSV, and each subsequent line represents an object's values separated by the specified
+ * separator. The resulting CSV-formatted string is returned.
+ */
 function convertArrayToCSV(data, separator) {
-    // Check if the input is not an empty array
     if (!Array.isArray(data) || data.length === 0) {
         console.error('Input is not a valid array of objects.');
         return '';
     }
 
-    // Extract headers from the first object
     const headers = Object.keys(data[0]);
 
-    // Create CSV content
     return [
-        headers.join(separator), // CSV header
-        ...data.map(obj => headers.map(header => obj[header]).join(separator)) // Data rows
+        headers.join(separator),
+        ...data.map(obj => headers.map(header => obj[header]).join(separator))
     ].join('\n');
 }
 
+/**
+ * Displays a calendar with events in the HTML document using the FullCalendar library.
+ *
+ * @function
+ * @param {Array<Object>} events - An array of events to be displayed on the calendar.
+ * @param {number} i - An index identifier for the calendar (used in HTML element IDs).
+ * @param {HTMLElement} container - The HTML container element where the calendar will be appended.
+ * @returns {void}
+ *
+ * @description
+ * This function takes an array of events, an index identifier, and an HTML container element as input.
+ * It uses the FullCalendar library to display a calendar in the specified container. The events are converted
+ * into the format expected by FullCalendar, including title, subtitle, start time, and end time. If no events
+ * are provided, a message indicating that there is nothing to display is shown. The calendar is rendered in
+ * the month view by default, with additional options such as agenda views, week views, day views, and list views.
+ */
 function displayCalendar(events, i, container) {
     const calendarContainerDiv = document.createElement('div')
     calendarContainerDiv.id = `calendarDiv${i}`
@@ -862,29 +951,18 @@ function displayCalendar(events, i, container) {
             center: 'title',
             right: 'month,agendaWeek,agendaDay,listWeek,year'
         },
-        defaultView: 'month', // Set the default view to month
-        events: convertedEvents, // Pass your converted events here
-        locale: 'pt', // Set the locale to Portuguese
+        defaultView: 'month',
+        events: convertedEvents,
+        locale: 'pt',
         timeFormat: 'HH:mm',
-        buttonText: {
-            today: 'Hoje',
-            month: 'Mês',
-            week: 'Semana',
-            day: 'Dia',
-            list: 'Lista',
-            year: 'Ano' // Added translation for 'year'
-        },
         eventRender: function (event, element) {
-            // Add subtitle to event element
             if (event.subtitle) {
                 element.append('<div class="fc-subtitle">' + event.subtitle + '</div>');
             }
         }
-        // Additional options can be added here
     });
 
 }
-
 
 /**
  * Compares two objects based on their date and time properties.
@@ -894,9 +972,6 @@ function displayCalendar(events, i, container) {
  * @param {boolean} debug - Flag to enable debugging output.
  * @returns {number} Returns a negative value if 'a' comes before 'b', a positive value if 'a' comes after 'b', and 0 if they are equal.
  *
- * @example
- * const result = compareObjectsByDateAndTime(object1, object2);
- * // result will be a number indicating the comparison result.
  */
 function compareObjectsByDateAndTime(a, b, debug) {
     // Compare dates
@@ -919,7 +994,18 @@ function compareObjectsByDateAndTime(a, b, debug) {
     return dateComparison;
 }
 
-// Function to start or stop the loading circle based on the value of isLoading
+/**
+ * Toggles the visibility of a loading indicator on the HTML document.
+ *
+ * @function
+ * @returns {void}
+ *
+ * @description
+ * This function toggles the visibility of a loading indicator in the HTML document. The loading indicator is
+ * identified by the element with the ID 'loadingCircle'. If the global variable `isLoading` is truthy, the
+ * loading indicator is displayed by setting its CSS 'display' property to 'block'. Otherwise, if `isLoading` is
+ * falsy, the loading indicator is hidden by setting its 'display' property to 'none'.
+ */
 function toggleLoading() {
     const loadingCircle = document.getElementById('loadingCircle');
     if (isLoading) {

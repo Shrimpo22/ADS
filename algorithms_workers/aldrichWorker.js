@@ -1,4 +1,15 @@
-const allocatedRooms = {}
+/**
+ * Handles the 'message' event and performs room allocation based on the provided data.
+ *
+ * @param {MessageEvent} e - The message event containing the data for room allocation.
+ *
+ * @description
+ * Allocates rooms to classes in a greedy way. It iterates over each class in the schedule for the day
+ * ({@link scheduleForDay}), identifying rooms in the capacity map ({@link capacityMap}) with equal or higher capacity
+ * that are available, and selects the first available room in the list for allocation.
+ *
+ * @returns {void}
+ */
 onmessage = function (e) {
     const allocatedRooms = {}
     var nrOverCapCounter = 0;
@@ -19,8 +30,7 @@ onmessage = function (e) {
             requiredCap,
             cls["Dia"],
             cls["Início"],
-            cls["Fim"],
-            cls["Curso"]
+            cls["Fim"]
         );
 
         if (matchingRooms && matchingRooms[0]) {
@@ -62,6 +72,7 @@ onmessage = function (e) {
         matches.push(cls);
     });
 
+    // Post the results back using 'postMessage'
     postMessage({ matches,  nrOverCapCounter,
         nrStuOverCapCounter,
         withouthCaracCounter,
@@ -72,7 +83,16 @@ onmessage = function (e) {
 
 
 
-    function getValuesForKey(map, searchKey, date, startTime, endTime, c) {
+    /**
+     * Retrieves available rooms from the capacity map based on specified criteria.
+     * @param {Map<number, Object[]>} map - The capacity map.
+     * @param {number} searchKey - The required capacity.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @returns {Object[]} - Array of available rooms matching the criteria.
+     */
+    function getValuesForKey(map, searchKey, date, startTime, endTime) {
         if (map.has(searchKey)) {
 
             const values = map.get(searchKey);
@@ -102,6 +122,14 @@ onmessage = function (e) {
         }
     }
 
+    /**
+     * Marks a room as unavailable for a specified time period.
+     * @param {string} roomName - The name of the room.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @param {boolean} debug - Flag for debugging.
+     */
     function markAsUnavailable(roomName, date, startTime, endTime, debug) {
 
         const [day, month, year] = date.split('/');
@@ -137,6 +165,15 @@ onmessage = function (e) {
         debug && console.log(allocatedRooms['2022']['12']['02'])
     }
 
+    /**
+     * Checks if a room is available for a specified time period.
+     * @param {string} roomName - The name of the room.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @param {boolean} debug - Flag for debugging.
+     * @returns {boolean} - True if the room is available, false otherwise.
+     */
     function isRoomAvailable(roomName, date, startTime, endTime, debug) {
         const [day, month, year] = date.split('/');
         let currHour = startTime.split(':').slice(0, 2).join(':');
@@ -163,6 +200,13 @@ onmessage = function (e) {
 
     }
 
+    /**
+     * Compares two times and returns the result.
+     * @param {string} time1 - The first time to compare.
+     * @param {string} time2 - The second time to compare.
+     * @param {boolean} debug - Flag for debugging.
+     * @returns {number} - -1 if time1 is earlier, 1 if time2 is earlier, 0 if equal.
+     */
     function compareTimes(time1, time2, debug) {
         debug && console.log("Compare " + time1 + " " + time2)
         // Convert times to minutes since midnight

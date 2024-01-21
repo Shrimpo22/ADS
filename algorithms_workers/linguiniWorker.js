@@ -1,5 +1,19 @@
 let lingAllocatedRooms = {};
 
+/**
+ * Handles the 'message' event and performs room allocation based on the provided data.
+ *
+ * @param {MessageEvent} e - The message event containing the data for room allocation.
+ *
+ * @description
+ * Allocates rooms to classes based on a calculated value for each room.
+ * Iterates over each class in the schedule for the day
+ * ({@link scheduleForDay}), identifies rooms in the capacity map ({@link capacityMap}) with equal or higher capacity
+ * that are available, assigns a value to each one using {@link calculateLgRoomValue}, and finally selects the room
+ * with the highest calculated value for allocation.
+ *
+ * @returns {void}
+ */
 onmessage = function (e) {
     const allocatedRooms = {}
     var nrOverCapCounter = 0;
@@ -39,7 +53,7 @@ onmessage = function (e) {
                 const name = ro['Nome sala'];
                 const cap = ro["Capacidade Normal"];
                 const carac = ro["Características"]
-                const value = calculateRoomValue(ro['Capacidade Normal'], requiredCapacity, ro['Características'], requirementsList, capValue, caracGeneral, caracSpecial, caracSName);
+                const value = calculateLgRoomValue(ro['Capacidade Normal'], requiredCapacity, ro['Características'], requirementsList, capValue, caracGeneral, caracSpecial, caracSName);
                 return {name, cap, carac, value};
             });
 
@@ -76,6 +90,7 @@ onmessage = function (e) {
             nrStuOverCapCounter += Math.abs(difference)
         }
 
+
         markAsUnavailable(roomWithHighestValue.name, so['Dia'], so['Início'], so['Fim'], false)
         so["Sala da aula"] = roomWithHighestValue.name;
         so["Lotação"] = roomWithHighestValue.cap
@@ -91,6 +106,14 @@ onmessage = function (e) {
         caracNotFulfilledCounter,
         capWastedCounter });
 
+    /**
+     * Marks a room as unavailable for a specified time period.
+     * @param {string} roomName - The name of the room.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @param {boolean} debug - Flag for debugging.
+     */
     function markAsUnavailable(roomName, date, startTime, endTime, debug) {
 
         const [day, month, year] = date.split('/');
@@ -126,6 +149,15 @@ onmessage = function (e) {
         debug && console.log(allocatedRooms['2022']['12']['02'])
     }
 
+    /**
+     * Checks if a room is available for a specified time period.
+     * @param {string} roomName - The name of the room.
+     * @param {string} date - The date of the class.
+     * @param {string} startTime - The start time of the class.
+     * @param {string} endTime - The end time of the class.
+     * @param {boolean} debug - Flag for debugging.
+     * @returns {boolean} - True if the room is available, false otherwise.
+     */
     function isRoomAvailable(roomName, date, startTime, endTime, debug) {
         const [day, month, year] = date.split('/');
         let currHour = startTime.split(':').slice(0, 2).join(':');
@@ -152,6 +184,13 @@ onmessage = function (e) {
 
     }
 
+    /**
+     * Compares two times and returns the result.
+     * @param {string} time1 - The first time to compare.
+     * @param {string} time2 - The second time to compare.
+     * @param {boolean} debug - Flag for debugging.
+     * @returns {number} - -1 if time1 is earlier, 1 if time2 is earlier, 0 if equal.
+     */
     function compareTimes(time1, time2, debug) {
         debug && console.log("Compare " + time1 + " " + time2)
         // Convert times to minutes since midnight
@@ -171,21 +210,41 @@ onmessage = function (e) {
         }
     }
 
-    function calculateRoomValue(capacity, requiredCapacity, characteristics, requirementsList, value1, value2, value3, Name) {
 
-        let value = 0;
+}
+
+/**
+ * Calculates the value for a room based on its capacity, characteristics, and specific requirements,
+ * applying different weightings for matching characteristics.
+ *
+ * The value is determined by the formula: `Math.round((requiredCapacity - capacity) / value1) + sum(weightedValues)`,
+ * where `weightedValues` is the sum of the weighted values assigned to each matching characteristic.
+ * The weightings depend on whether the characteristic matches the specified `Name`.
+ *
+ * @param {number} capacity - The capacity of the room.
+ * @param {number} requiredCapacity - The required capacity for the class.
+ * @param {string[]} characteristics - The characteristics of the room.
+ * @param {string[]} requirementsList - The list of specific requirements for the class.
+ * @param {number} value1 - The divisor for capacity adjustment.
+ * @param {number} value2 - The weight assigned to matching characteristics (excluding `Name`).
+ * @param {number} value3 - The weight assigned to matching characteristics with the specified `Name`.
+ * @param {string} Name - The specific characteristic to be treated differently in weighting.
+ * @returns {number} - The calculated value for the room.
+ */
+function calculateLgRoomValue(capacity, requiredCapacity, characteristics, requirementsList, value1, value2, value3, Name) {
+
+    let value = 0;
 
 
-        value = Math.round((requiredCapacity - capacity)/Number(value1))
+    value = Math.round((requiredCapacity - capacity)/Number(value1))
 
-        for ( const requirement of requirementsList){
-            if (characteristics.includes(requirement)) {
-                if(requirement === Name)
-                    value += Number(value3);
-                else
-                    value += Number(value2);
-            }
+    for ( const requirement of requirementsList){
+        if (characteristics.includes(requirement)) {
+            if(requirement === Name)
+                value += Number(value3);
+            else
+                value += Number(value2);
         }
-        return value;
     }
+    return value;
 }
