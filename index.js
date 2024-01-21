@@ -97,6 +97,7 @@ csvForm.addEventListener("submit", function (e) {
     var highlowCheck = document.getElementById("check2").checked;
     var ratCheck = document.getElementById("check3").checked;
     var linguiniCheck = document.getElementById('check4').checked;
+    var kowalskiCheck = document.getElementById('check5').checked;
 
     var featureSelected = "a"
 
@@ -211,6 +212,8 @@ csvForm.addEventListener("submit", function (e) {
                 last = 3
             if (linguiniCheck)
                 last = 4
+            if (kowalskiCheck)
+                last = 5
 
 
 
@@ -251,6 +254,17 @@ csvForm.addEventListener("submit", function (e) {
                     linguini(roomsObjects, objectsByDateMap, false, true, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
                 }else
                     linguini(roomsObjects, objectsByDateMap, false, false, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
+            }
+
+            if (kowalskiCheck){
+                isLoading = 1
+                toggleLoading()
+                if (last === 5){
+                    console.log("Kowalski is the last")
+                    kowalski(roomsObjects, objectsByDateMap, false, true)
+                }
+                else
+                    kowalski(roomsObjects, objectsByDateMap, false, false)
             }
 
 
