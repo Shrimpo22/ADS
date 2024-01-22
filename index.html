@@ -11,6 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.0/math.min.js"></script>
     <title>G14 Rooms to Events</title>
     <style>
 
@@ -81,153 +82,167 @@
         </div>
     </div>
 
+
+
     <div id="menus-algos" style="display:none;flex-direction: column; align-items: center">
 
-    <div class="alg--choose">
-        <label>Choose the algorithms to use!</label>
-        <ul>
-            <li><input type="checkbox" id="check1" name="check1"> Aldrich</li>
-            <li><input type="checkbox" id="check2" name="check2"> Dexter </li>
-            <li><input type="checkbox" id="check3" name="check3"> Ratatouille</li>
-            <li><input type="checkbox" id="check4" name="check4" onchange="toggleMenu()"> Linguini</li>
-        </ul>
-    </div>
-
-    <div style="display: none" id="menu-linguini">
-        <div class="linguini-header">
-            <h1>Select the custom values for the linguini Algorithm</h1>
+        <div id="criteriaContainer" >
+            <label>Add your own quality criterion if you want!</label>
+            <div class="inputContainer">
+                <input type="text" id="messageInput" placeholder="Inscritos no turno - Lotação > 0">
+                <span id="addMessageIcon" onclick="addMessage()"><i class="fa-solid fa-plus"></i></span>
+            </div>
+            <div id="messageList"></div>
         </div>
-        <div class="linguini-inputs">
-            <div class="linguini-option">
-                <label for="numberInput">Capacity waste</label>
-                <input type="number" id="numberInput" step="0.1" min="-2" max="2" value="0">
 
+        <div class="alg--choose">
+            <label>Choose the algorithms to use!</label>
+            <ul>
+                <li><input type="checkbox" id="check1" name="check1"> Aldrich</li>
+                <li><input type="checkbox" id="check2" name="check2"> Dexter </li>
+                <li><input type="checkbox" id="check3" name="check3"> Ratatouille</li>
+                <li><input type="checkbox" id="check4" name="check4" onchange="toggleMenu()"> Linguini</li>
+                <li><input type="checkbox" id="check5" name="check3"> Kowalski</li>
+                <li><input type="checkbox" id="check6" name="check6"> Mimir </li>
+
+            </ul>
+        </div>
+
+        <div style="display: none" id="menu-linguini">
+            <div class="linguini-header">
+                <h1>Select the custom values for the linguini Algorithm</h1>
             </div>
+            <div class="linguini-inputs">
+                <div class="linguini-option">
+                    <label for="numberInput">Capacity waste</label>
+                    <input type="number" id="numberInput" step="0.1" min="-2" max="2" value="0">
 
-            <div class="linguini-option">
-                <label for="numberInput2">Feature</label>
-                <input type="number" id="numberInput2" step="1" min="-100" max="100" value="0">
+                </div>
 
-            </div>
+                <div class="linguini-option">
+                    <label for="numberInput2">Feature</label>
+                    <input type="number" id="numberInput2" step="1" min="-100" max="100" value="0">
 
-            <div class="linguini-option">
-                <label for="linguiniSelection">Special Feature</label>
-                <select id="linguiniSelection"></select>
-            </div>
+                </div>
 
-            <div class="linguini-option">
-                <label for="numberInput3">its value</label>
-                <input type="number" id="numberInput3" step="1" min="-100" max="100" value="0">
+                <div class="linguini-option">
+                    <label for="linguiniSelection">Special Feature</label>
+                    <select id="linguiniSelection"></select>
+                </div>
 
-            </div>
+                <div class="linguini-option">
+                    <label for="numberInput3">its value</label>
+                    <input type="number" id="numberInput3" step="1" min="-100" max="100" value="0">
 
-            <script>
-                document.getElementById('numberInput').addEventListener('wheel', function (e) {
-                    // Prevent scrolling to avoid unwanted value changes
-                    e.preventDefault();
+                </div>
 
-                    // Increment or decrement the value based on wheel direction
-                    if (e.deltaY > 0) {
-                        this.stepDown();
-                    } else {
-                        this.stepUp();
-                    }
-                });
-                document.getElementById('numberInput2').addEventListener('wheel', function (e) {
-                    // Prevent scrolling to avoid unwanted value changes
-                    e.preventDefault();
+                <script>
+                    document.getElementById('numberInput').addEventListener('wheel', function (e) {
+                        // Prevent scrolling to avoid unwanted value changes
+                        e.preventDefault();
 
-                    // Increment or decrement the value based on wheel direction
-                    if (e.deltaY > 0) {
-                        this.stepDown();
-                    } else {
-                        this.stepUp();
-                    }
-                });
-                document.getElementById('numberInput3').addEventListener('wheel', function (e) {
-                    // Prevent scrolling to avoid unwanted value changes
-                    e.preventDefault();
+                        // Increment or decrement the value based on wheel direction
+                        if (e.deltaY > 0) {
+                            this.stepDown();
+                        } else {
+                            this.stepUp();
+                        }
+                    });
+                    document.getElementById('numberInput2').addEventListener('wheel', function (e) {
+                        // Prevent scrolling to avoid unwanted value changes
+                        e.preventDefault();
 
-                    // Increment or decrement the value based on wheel direction
-                    if (e.deltaY > 0) {
-                        this.stepDown();
-                    } else {
-                        this.stepUp();
-                    }
-                });
-            </script>
-            <script>
-                function toggleMenu() {
+                        // Increment or decrement the value based on wheel direction
+                        if (e.deltaY > 0) {
+                            this.stepDown();
+                        } else {
+                            this.stepUp();
+                        }
+                    });
+                    document.getElementById('numberInput3').addEventListener('wheel', function (e) {
+                        // Prevent scrolling to avoid unwanted value changes
+                        e.preventDefault();
+
+                        // Increment or decrement the value based on wheel direction
+                        if (e.deltaY > 0) {
+                            this.stepDown();
+                        } else {
+                            this.stepUp();
+                        }
+                    });
+                </script>
+                <script>
+                    function toggleMenu() {
 
 
-                    var checkbox = document.getElementById("check4");
-                    var menu = document.getElementById("menu-linguini");
+                        var checkbox = document.getElementById("check4");
+                        var menu = document.getElementById("menu-linguini");
 
-                    if(checkbox.checked){
+                        if(checkbox.checked){
 
-                        const linguiniSelection =document.getElementById('linguiniSelection')
-                        if (linguiniSelection.options.length === 0){
-                            const menu1Options = document.getElementById('menu1Selection').options
-                            linguiniSelection.innerHTML = '';
+                            const linguiniSelection =document.getElementById('linguiniSelection')
+                            if (linguiniSelection.options.length === 0){
+                                const menu1Options = document.getElementById('menu1Selection').options
+                                linguiniSelection.innerHTML = '';
 
-                            for (var i = 0; i < menu1Options.length; i++) {
-                                var option = document.createElement('option');
-                                option.value = menu1Options[i].value;
-                                option.text = menu1Options[i].text;
-                                linguiniSelection.add(option);
+                                for (var i = 0; i < menu1Options.length; i++) {
+                                    var option = document.createElement('option');
+                                    option.value = menu1Options[i].value;
+                                    option.text = menu1Options[i].text;
+                                    linguiniSelection.add(option);
+                                }
                             }
                         }
+                        // If checkbox is checked, show the menu; otherwise, hide it
+                        menu.style.display = checkbox.checked ? "flex" : "none";
                     }
-                    // If checkbox is checked, show the menu; otherwise, hide it
-                    menu.style.display = checkbox.checked ? "flex" : "none";
-                }
-            </script>
+                </script>
+            </div>
+
         </div>
 
-    </div>
+        <div class="file--options">
+            <div class="option">
+                <label for="separatorInput">Enter CSV Separator that's used in both files:</label>
+                <select id="separatorInput" >
+                    <option value=",">Comma (,)</option>
+                    <option value=";">Semicolon (;)</option>
+                    <option value="\t">Tab (\t)</option>
+                    <option value="|">Pipe (|)</option>
+                    <option value=":">Colon (:)</option>
+                    <option value=" ">Space ( )</option>
+                    <option value="~">Tilde (~)</option>
+                </select>
+            </div>
 
-    <div class="file--options">
-        <div class="option">
-            <label for="separatorInput">Enter CSV Separator that's used in both files:</label>
-            <select id="separatorInput" >
-                <option value=",">Comma (,)</option>
-                <option value=";">Semicolon (;)</option>
-                <option value="\t">Tab (\t)</option>
-                <option value="|">Pipe (|)</option>
-                <option value=":">Colon (:)</option>
-                <option value=" ">Space ( )</option>
-                <option value="~">Tilde (~)</option>
-            </select>
+            <div class="option">
+                <label for="timeFormatSelector">Choose the time format used in the files.</label>
+                <select id="timeFormatSelector">
+                    <option value="HH:mm:ss">14:30:59</option>
+                    <option value="HH-mm-ss">14-30-59</option>
+                    <option value="H:mm:ss a">02:30:59 pm</option>
+                    <option value="H:mm:ss a">02-30-59 pm</option>
+                    <option value="h:mm:ss A">02:30:59 PM</option>
+                    <option value="h:mm:ss A">02-30-59 PM</option>
+                    <!-- Add more options as needed -->
+                </select>
+            </div>
+            <div class="option">
+                <label for="dayFormatSelector">Choose the date format used in the files.</label>
+                <select id="dayFormatSelector">
+                    <option value="DD-MM-YYYY">31-01-2023</option>
+                    <option value="DD/MM/YYYY">31/01/2023</option>
+                    <option value="MM/DD/YYYY">01-31-2023</option>
+                    <option value="MM/DD/YYYY">01/31/2023</option>
+                    <option value="YYYY/MM/DD">2023/01/31</option>
+                    <option value="YYYY/MM/DD">2023-01-31</option>
+                </select>
+            </div>
+            <div class="option">
+                <label for="maxRows">Choose the maximum rows of the csvs to display.</label>
+                <input id="maxRows" type="number">
+            </div>
         </div>
-
-        <div class="option">
-            <label for="timeFormatSelector">Choose the time format used in the files.</label>
-            <select id="timeFormatSelector">
-                <option value="HH:mm:ss">14:30:59</option>
-                <option value="HH-mm-ss">14-30-59</option>
-                <option value="H:mm:ss a">02:30:59 pm</option>
-                <option value="H:mm:ss a">02-30-59 pm</option>
-                <option value="h:mm:ss A">02:30:59 PM</option>
-                <option value="h:mm:ss A">02-30-59 PM</option>
-                <!-- Add more options as needed -->
-            </select>
-        </div>
-        <div class="option">
-            <label for="dayFormatSelector">Choose the time format used in the files.</label>
-            <select id="dayFormatSelector">
-                <option value="DD-MM-YYYY">31-01-2023</option>
-                <option value="DD/MM/YYYY">31/01/2023</option>
-                <option value="MM/DD/YYYY">01-31-2023</option>
-                <option value="MM/DD/YYYY">01/31/2023</option>
-                <option value="YYYY/MM/DD">2023/01/31</option>
-                <option value="YYYY/MM/DD">2023-01-31</option>
-            </select>
-        </div>
-        <div class="option">
-            <label for="maxRows">Choose the maximum rows of the csvs to display.</label>
-            <input id="maxRows" type="number">
-        </div>
-    </div>
     </div>
 
     <input type="submit" id="submitBtn" value="Submit Files">
@@ -299,10 +314,15 @@
 <script src=algorithms_workers/linguiniWorker.js></script>
 <script src=gui/gui.js></script>
 <script src=algorithms_workers/readerWorker.js></script>
+<script src=algorithms_workers/CriteriaWorker.js></script>
 <script src=algorithms_workers/aldrichWorker.js></script>
 <script src=algorithms_workers/dexterWorker.js></script>
 <script src=algorithms_workers/remyCooker.js></script>
 <script src=algorithms_workers/ratatouille.js></script>
+<script src=algorithms_workers/kowalski.js></script>
+<script src=algorithms_workers/kawasaki.js></script>
+<script src=algorithms_workers/mimir.js></script>
+<script src=algorithms_workers/mimirWorker.js></script>
 <script src=utilities/linkedList.js></script>
 </body>
 

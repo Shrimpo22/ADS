@@ -1,3 +1,18 @@
+/**
+ * Web Worker script for asynchronously processing chunks of CSV data.
+ * @module algorithms_workers/readerWorker
+ * @param {Object} event - The message event containing data for processing.
+ * @param {Array<string>} event.data.chunk - The chunk of CSV data to process.
+ * @param {Array<string>} event.data.headers - The column headers of the CSV data.
+ * @param {string} event.data.separatorInput - The separator used in the CSV data.
+ * @param {string} event.data.timeFormat - The format of time values in the CSV data.
+ * @param {string} event.data.dayFormat - The format of date values in the CSV data.
+ * @param {Array<number>} event.data.timeCols - Array of indices representing time columns.
+ * @param {Array<number>} event.data.dateCols - Array of indices representing date columns.
+ * @param {string} event.data.csvFileName - The name of the CSV file being processed.
+ * @param {boolean} event.data.debug - A flag indicating whether to enable debug mode.
+ * @returns {void}
+ */
 onmessage = function (event) {
 
     const {
@@ -38,7 +53,6 @@ onmessage = function (event) {
 
         dateCols.forEach(i => {
             if (values[i] === "") {
-                console.log("HERE")
                 eliminate = true;
                 return;
             }
@@ -82,7 +96,14 @@ onmessage = function (event) {
     });
 };
 
-// Define any additional utility functions here
+/**
+ * Checks if a given input string adheres to a specified date or time format.
+ *
+ * @function
+ * @param {string} inputString - The input string to validate.
+ * @param {string} dateTimeFormat - The expected date or time format.
+ * @returns {boolean} - True if the input string adheres to the specified format, false otherwise.
+ */
 function isValidDateTimeFormat(inputString, dateTimeFormat) {
     const separators = ['/', '-', ':'];
 
@@ -126,4 +147,4 @@ function isValidDateTimeFormat(inputString, dateTimeFormat) {
     }
 
     return false;
-};
+}

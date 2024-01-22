@@ -1,4 +1,4 @@
-let lingAllocatedRooms = {};
+let kowAllocatedRooms = {};
 
 /**
  * Handles the 'message' event and performs room allocation based on the provided data.
@@ -8,8 +8,7 @@ let lingAllocatedRooms = {};
  * @description
  * Allocates rooms to classes based on a calculated value for each room.
  * Iterates over each class in the schedule for the day
- * ({@link scheduleForDay}), identifies rooms in the capacity map ({@link capacityMap}) with equal or higher capacity
- * that are available, assigns a value to each one using {@link calculateLgRoomValue}, and finally selects the room
+ * ({@link scheduleForDay}), filters the {@link roomsObjects} by room availability, assigns a value to each one using {@link calculateKowRoomValue}, and finally selects the room
  * with the highest calculated value for allocation.
  *
  * @returns {void}
@@ -24,10 +23,7 @@ onmessage = function (e) {
     var capWastedCounter = 0;
     var caracNotFulfilledCounter = 0;
 
-    const {roomsObjects, scheduleForDay, capValue, caracGeneral,
-        caracSpecial,
-        caracSName
-    } = e.data;
+    const {roomsObjects, scheduleForDay, scarcityMap} = e.data;
 
     // Perform ratatouille algorithm logic
 
@@ -38,7 +34,6 @@ onmessage = function (e) {
         const requirementsList = so['Características da sala pedida para a aula']
 
         const matchingRooms = roomsObjects
-            .filter(ro => Number(ro['Capacidade Normal']) >= requiredCapacity)
             .filter(ro => {
                 // Check room availability for the specified date and time range
                 return isRoomAvailable(
@@ -53,7 +48,7 @@ onmessage = function (e) {
                 const name = ro['Nome sala'];
                 const cap = ro["Capacidade Normal"];
                 const carac = ro["Características"]
-                const value = calculateLgRoomValue(ro['Capacidade Normal'], requiredCapacity, ro['Características'], requirementsList, capValue, caracGeneral, caracSpecial, caracSName);
+                const value = calculateKowRoomValue(ro['Capacidade Normal'], requiredCapacity, ro['Características'], requirementsList, scarcityMap);
                 return {name, cap, carac, value};
             });
 
@@ -90,7 +85,6 @@ onmessage = function (e) {
             nrStuOverCapCounter += Math.abs(difference)
         }
 
-
         markAsUnavailable(roomWithHighestValue.name, so['Dia'], so['Início'], so['Fim'], false)
         so["Sala da aula"] = roomWithHighestValue.name;
         so["Lotação"] = roomWithHighestValue.cap
@@ -122,21 +116,21 @@ onmessage = function (e) {
         debug && console.log("HourStart: " + hourStart);
 
         // Check if the year exists in the allocatedRooms, if not, add it
-        lingAllocatedRooms[year] = lingAllocatedRooms[year] || {};
+        kowAllocatedRooms[year] = kowAllocatedRooms[year] || {};
 
         // Check if the month exists in the year, if not, add it
-        lingAllocatedRooms[year][month] = lingAllocatedRooms[year][month] || {};
+        kowAllocatedRooms[year][month] = kowAllocatedRooms[year][month] || {};
 
         // Check if the day exists in the month, if not, add it
-        lingAllocatedRooms[year][month][day] = lingAllocatedRooms[year][month][day] || {};
+        kowAllocatedRooms[year][month][day] = kowAllocatedRooms[year][month][day] || {};
 
         let currHour = hourStart
         while (compareTimes(currHour, endTime, false)) {
             debug && console.log("New Hour: " + currHour);
 
-            lingAllocatedRooms[year][month][day][currHour] = lingAllocatedRooms[year][month][day][currHour] || [];
+            kowAllocatedRooms[year][month][day][currHour] = kowAllocatedRooms[year][month][day][currHour] || [];
 
-            lingAllocatedRooms[year][month][day][currHour].push(roomName);
+            kowAllocatedRooms[year][month][day][currHour].push(roomName);
 
             const [hours, minutes] = currHour.split(':').map(Number);
             const newMinutes = (minutes + 30) % 60;
@@ -164,11 +158,11 @@ onmessage = function (e) {
         debug && console.log("Day: " + day + " Month: " + month + " Year: " + year)
         while (compareTimes(currHour, endTime)) {
             debug && console.log("CurrHour: " + currHour)
-            if (lingAllocatedRooms[year] && lingAllocatedRooms[year][month] && lingAllocatedRooms[year][month][day] && lingAllocatedRooms[year][month][day][currHour]) {
-                debug && console.log(lingAllocatedRooms[year][month][day][currHour])
+            if (kowAllocatedRooms[year] && kowAllocatedRooms[year][month] && kowAllocatedRooms[year][month][day] && kowAllocatedRooms[year][month][day][currHour]) {
+                debug && console.log(kowAllocatedRooms[year][month][day][currHour])
                 debug && console.log("Room Name: " + roomName)
 
-                if (lingAllocatedRooms[year][month][day][currHour].includes(roomName)) {
+                if (kowAllocatedRooms[year][month][day][currHour].includes(roomName)) {
                     return false;
                 }
             }
@@ -214,37 +208,35 @@ onmessage = function (e) {
 }
 
 /**
- * Calculates the value for a room based on its capacity, characteristics, and specific requirements,
- * applying different weightings for matching characteristics.
+ * Calculates the value for a room based on its capacity, required capacity, characteristics, and requirements list.
  *
- * The value is determined by the formula: `Math.round((requiredCapacity - capacity) / value1) + sum(weightedValues)`,
- * where `weightedValues` is the sum of the weighted values assigned to each matching characteristic.
- * The weightings depend on whether the characteristic matches the specified `Name`.
+ * The value is determined by combining a ratio value, representing the capacity utilization,
+ * with a features value that considers the scarcity of matched and wasted characteristics.
+ * The ratio value is calculated as (capacity/requiredCapacity) - Math.abs(capacity - requiredCapacity),
+ * and the features value is computed by weighing the scarcity of matched characteristics and penalizing wasted characteristics.
  *
  * @param {number} capacity - The capacity of the room.
- * @param {number} requiredCapacity - The required capacity for the class.
+ * @param {number} requiredCapacity - The required capacity for the room.
  * @param {string[]} characteristics - The characteristics of the room.
- * @param {string[]} requirementsList - The list of specific requirements for the class.
- * @param {number} value1 - The divisor for capacity adjustment.
- * @param {number} value2 - The weight assigned to matching characteristics (excluding `Name`).
- * @param {number} value3 - The weight assigned to matching characteristics with the specified `Name`.
- * @param {string} Name - The specific characteristic to be treated differently in weighting.
+ * @param {string[]} requirementsList - The list of specific requirements for the room.
+ * @param {Object} scarcityMap - A map containing the scarcity values for each characteristic.
  * @returns {number} - The calculated value for the room.
  */
-function calculateLgRoomValue(capacity, requiredCapacity, characteristics, requirementsList, value1, value2, value3, Name) {
+function calculateKowRoomValue(capacity, requiredCapacity, characteristics, requirementsList, scarcityMap) {
+    let featuresValue = 0
+    let featuresMatchedValue = 0
+    let featuresWastedValue = 0
+    const ratioValue = (capacity/requiredCapacity) - Math.abs(capacity-requiredCapacity)
 
-    let value = 0;
+    for (const characteristic of characteristics) {
+        if(requirementsList.includes(characteristic)){
 
-
-    value = Math.round((requiredCapacity - capacity)/Number(value1))
-
-    for ( const requirement of requirementsList){
-        if (characteristics.includes(requirement)) {
-            if(requirement === Name)
-                value += Number(value3);
-            else
-                value += Number(value2);
+            featuresMatchedValue+= scarcityMap[characteristic]
+        }
+        else{
+            featuresWastedValue+= scarcityMap[characteristic]
         }
     }
-    return value;
+    featuresValue = featuresMatchedValue - Math.pow(featuresWastedValue,2)
+    return ratioValue + featuresValue;
 }

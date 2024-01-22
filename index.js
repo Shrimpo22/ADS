@@ -5,34 +5,74 @@ window.addEventListener('load', loadConfigurations);
  * @type {HTMLFormElement}
  */
 const csvForm = document.getElementById("csvForm");
-
 /**
  * Represents the input element for rooms CSV file.
  * @type {HTMLInputElement}
  */
 const roomsCSV = document.getElementById("roomsCSV");
-
 /**
  * Represents the input element for schedule CSV file.
  * @type {HTMLInputElement}
  */
 const scheduleCSV = document.getElementById("scheduleCSV");
-
 /**
  * Object to store allocatedRooms data.
  * @type {Object}
  */
 var separatorInput
-
+/**
+ * Number of rows to display when printing object.
+ * @type {number}
+ */
 var maxRowsToDisplay = 0;
-
-let isLoading = 1; // Set to 1 to start the loading, set to 0 to stop
-
+/**
+ * Represents the processing state of the code.
+ * Use in conjunction with {@link toggleLoading}.
+ *
+ * @type {number} - Set to 1 to initiate loading, set to 0 to stop.
+ */
+let isLoading = 1;
+/**
+ * Number of total rooms.
+ * @type {number}
+ */
 let roomsTotal = 0
+/**
+ * Number of total classes.
+ * @type {number}
+ */
 let classesTotal = 0
-
+/**
+ * Represents the id for the new calendar to create.
+ * Simple iterator.
+ * @type {number}
+ */
 let globalI = 1
+/**
+ * Holds an array of criteria to be used in the application.
+ *
+ * @type {Array}
+ */
+let criteriasToUse = []
 
+
+/**
+ * Loads configurations from the browser's local storage, if available.
+ * Assigns the saved values to corresponding HTML elements for the following configurations:
+ *
+ * - check1
+ * - check2
+ * - check3
+ * - check4
+ * - timeFormatSelector
+ * - dayFormatSelector
+ * - separatorInput
+ * - maxRows
+ * - logItems (criteria)
+ *
+ * @function
+ * @returns {void}
+ */
 function loadConfigurations() {
     const configurations = JSON.parse(localStorage.getItem('formConfigurations'));
 
@@ -40,18 +80,55 @@ function loadConfigurations() {
         document.getElementById('check1').checked = configurations.check1;
         document.getElementById('check2').checked = configurations.check2;
         document.getElementById('check3').checked = configurations.check3;
+        document.getElementById('check5').checked = configurations.check5;
+        document.getElementById('check6').checked = configurations.check6;
         document.getElementById('timeFormatSelector').value = configurations.timeFormat;
         document.getElementById('dayFormatSelector').value = configurations.dayFormat;
         document.getElementById('separatorInput').value = configurations.separatorInput;
         document.getElementById('maxRows').value = configurations.maxRows
-        // Set more configurations as needed
+    }
+
+    if(configurations.logItems){
+        const logItemsArray = configurations.logItems;
+        const logItemsContainer = document.getElementById('messageList');
+
+        logItemsArray.forEach((logItemText, index) => {
+            const logItem = document.createElement('div');
+            logItem.className = 'logItem';
+
+            const spanText = document.createElement('span');
+            spanText.textContent = `${logItemText}`;
+
+            const deleteIcon = document.createElement('span');
+            deleteIcon.classList.add('deleteIcon');
+            deleteIcon.onclick = function() {
+                deleteLogItem(this);
+            };
+            deleteIcon.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+
+            logItem.appendChild(spanText)
+            logItem.appendChild(deleteIcon)
+            logItemsContainer.appendChild(logItem);
+        });
     }
 }
 
 /**
- * Event listener for form submission to handle CSV file processing.
+ * Event handler for the submission of the CSV form.
+ *
+ * @function
+ * @param {Event} e - The form submission event.
+ * @returns {void}
+ *
+ * @description
+ * This function handles the form submission event for the CSV form. It prevents the default form submission
+ * behavior, retrieves values from various form elements such as dropdowns and checkboxes, validates the form
+ * inputs, saves configurations {@link saveConfigurations}, and triggers the creation of objects from CSV files {@link createObjects}. The function then prints
+ * tables for rooms and schedule objects, performs sorting and grouping, and initiates specific algorithms
+ * based on user-selected checkboxes (greedyCheck, highlowCheck, ratCheck, linguiniCheck). Loading indicators
+ * are toggled during the processing, and the results are displayed on the HTML document.
  */
-csvForm.addEventListener("submit", function (e) {
+function handleCsvFormSubmission(e) {
     e.preventDefault();
     var roomCapacityCol = document.getElementById("menu1Selection").value;
     var roomNameCol = document.getElementById("menu12Selection").value;
@@ -66,24 +143,22 @@ csvForm.addEventListener("submit", function (e) {
 
     separatorInput = document.getElementById('separatorInput').value;
 
-// Retrieve values from checkboxes
     var greedyCheck = document.getElementById("check1").checked;
     var highlowCheck = document.getElementById("check2").checked;
     var ratCheck = document.getElementById("check3").checked;
     var linguiniCheck = document.getElementById('check4').checked;
-
+    var kowalskiCheck = document.getElementById('check5').checked
     var featureSelected = "a"
+    var mimirCheck = document.getElementById('check6').checked
+
 
     if(linguiniCheck) {
         var mainCapValue = document.getElementById('numberInput').value
         var mainCaracGeneralValue = document.getElementById('numberInput2').value
         var mainSpecialCaracValue = document.getElementById('numberInput3').value
         var selectElement = document.getElementById("linguiniSelection");
-        // Get the selected index
         var selectedIndex = selectElement.selectedIndex;
-        // Get the selected option
         var selectedOption = selectElement.options[selectedIndex];
-        // Get the text content of the selected option
         var mainSpecialCaracName = selectedOption.text
         featureSelected = selectElement.value
     }
@@ -94,7 +169,6 @@ csvForm.addEventListener("submit", function (e) {
     maxRowsToDisplay = document.getElementById("maxRows").value
     if (maxRowsToDisplay === ""){
         alert("Error: Max Rows to Display is Blank! Please choose a number.");
-        // Do not proceed with form submission
         return;
     }
 
@@ -105,11 +179,11 @@ csvForm.addEventListener("submit", function (e) {
     if (
         [roomCapacityCol, roomNameCol, roomCharacFirstCol, ucBeginningTimeCol, ucEndTimeCol, ucDateCol, ucStudentsEnrolledCol, ucCharacNeededCol, ucNameCol, featureSelected].includes("")
     ) {
-        // Display error message
         alert("Error: One or more selections are blank. Please choose an option.");
-        // Do not proceed with form submission
         return;
     }
+
+
 
     alert("Form submitted successfully!");
     document.getElementById('display-area').innerHTML=''
@@ -120,9 +194,7 @@ csvForm.addEventListener("submit", function (e) {
     roomVariablesMap[document.getElementById("menu1Selection").value] = "Capacidade Normal";
     roomVariablesMap[document.getElementById("menu12Selection").value] = "Nome sala";
     roomVariablesMap[document.getElementById("menu13Selection").value] = "Edifício";
-    //roomVariablesMap[document.getElementById("menu14Selection").value] = "Characteristics Last Column";
 
-// HashMap for ucs variables
     const ucVariablesMap = {};
     ucVariablesMap[document.getElementById("menu2Selection").value] = "Início";
     ucVariablesMap[document.getElementById("menu22Selection").value] = "Fim";
@@ -134,12 +206,16 @@ csvForm.addEventListener("submit", function (e) {
     const rooms_input = roomsCSV.files[0];
     const schedule_input = scheduleCSV.files[0];
 
+    const logs = document.querySelectorAll('.logItem span:first-child');
+    const criteria = Array.from(logs).map(log => log.textContent);
+    criteriasToUse =[...new Set(criteria)];
+
     isLoading = 1
     toggleLoading()
 
-    Promise.all([create_objects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), create_objects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
+    Promise.all([createObjects(rooms_input, roomVariablesMap, separatorInput, timeFormat, dayFormat, [], [], false), createObjects(schedule_input, ucVariablesMap, separatorInput, timeFormat, dayFormat, [ucBeginningTimeCol, ucEndTimeCol], [ucDateCol], false)])
         .then(([roomsObjects, scheduleObjects]) => {
-            console.log("Read")
+
             if (roomsObjects.length === 0 || scheduleObjects.length === 0) {
                 alert("One of the csv files is possibly blank or missing required columns!")
                 isLoading = 0
@@ -158,7 +234,6 @@ csvForm.addEventListener("submit", function (e) {
 
             scheduleObjects.sort(compareObjectsByDateAndTime);
             scheduleObjects.forEach((obj) => {
-                // Extract the date from the current object
                 const date = obj['Dia'];
                 // Check if the date is already a key in the map
                 if (objectsByDateMap.has(date)) {
@@ -170,60 +245,6 @@ csvForm.addEventListener("submit", function (e) {
                 }
             });
 
-            const matches = []
-            const workers = [];
-            let workersCount = 0;
-            const results = [];
-
-
-            // objectsByDateMap.forEach((ucsForTheDate, index) => {
-            //     console.log("AAAAAAAAAAA", ucsForTheDate)
-            //     const conflictClasses = findConflictingClasses(ucsForTheDate,false)
-            //     console.log(conflictClasses)
-            //     let wasteVar = 0
-            //     let valueVar= 0
-            //
-            //
-            //
-            //     conflictClasses.forEach(chain =>{
-            //         console.log(chain)
-            //
-            //         const worker = new Worker('lpSolverWorker.js');
-            //         workersCount++;
-            //         console.log("+1", workersCount)
-            //
-            //         worker.onmessage = function (e) {
-            //             workersCount--;
-            //             console.log("-1", workersCount)
-            //             const lpResult = e.data;
-            //             if(lpResult === -1)
-            //                 console.log("ASDASDASDASDASDCASD")
-            //             if (lpResult !== -1) {
-            //                 // Process the result
-            //                 wasteVar += lpResult.waste;
-            //                 valueVar += lpResult.value;
-            //                 lpResult.variableValues.forEach((match) => matches.push(match));
-            //             }
-            //
-            //             // Store the result and check if all workers have finished
-            //             if (workersCount === 0) {
-            //                 console.log("ACABOU")
-            //                 isLoading = 0;
-            //                 console.log("Matches", matches)
-            //                 toggleLoading();
-            //                 printObjectsTable(matches, resultLPContainer)
-            //                 displayCalendar(matches)
-            //             }
-            //         };
-            //
-            //         // Store the worker reference
-            //         workers.push(worker);
-            //
-            //         // Send data to the worker
-            //         worker.postMessage({ rooms: roomsObjects, classes: chain});
-            //     } )
-            // })
-
             let last=0
             if (greedyCheck)
                 last = 1
@@ -233,15 +254,15 @@ csvForm.addEventListener("submit", function (e) {
                 last = 3
             if (linguiniCheck)
                 last = 4
-
-
-
+            if (kowalskiCheck)
+                last = 5
+            if (mimirCheck)
+                last = 6
 
             if (greedyCheck) {
                 isLoading = 1
                 toggleLoading()
                 if(last === 1){
-                    console.log("Greedy is the last")
                     aldrich(roomsObjects, objectsByDateMap, true)
                 }else
                     aldrich(roomsObjects, objectsByDateMap, false)
@@ -250,7 +271,6 @@ csvForm.addEventListener("submit", function (e) {
                 isLoading = 1
                 toggleLoading()
                 if(last === 2){
-                    console.log("Dexter is the last")
                     dexter(roomsObjects, objectsByDateMap, true)
                 }else
                     dexter(roomsObjects, objectsByDateMap, false)
@@ -259,20 +279,36 @@ csvForm.addEventListener("submit", function (e) {
                 isLoading = 1
                 toggleLoading()
                 if(last === 3){
-                    console.log("Ratatouille is the last")
                     ratatouille(roomsObjects, objectsByDateMap,false, true)
                 }else
                     ratatouille(roomsObjects, objectsByDateMap,false, false)
             }
-
             if (linguiniCheck){
                 isLoading = 1
                 toggleLoading()
                 if(last === 4){
-                    console.log("Linguine is the last")
                     linguini(roomsObjects, objectsByDateMap, false, true, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
                 }else
                     linguini(roomsObjects, objectsByDateMap, false, false, mainCapValue, mainCaracGeneralValue, mainSpecialCaracValue, mainSpecialCaracName)
+            }
+
+            if (kowalskiCheck){
+                isLoading = 1
+                toggleLoading()
+                if (last === 5){
+                    console.log("Kowalski is the last")
+                    kowalski(roomsObjects, objectsByDateMap, false, true)
+                }
+                else
+                    kowalski(roomsObjects, objectsByDateMap, false, false)
+            }
+            if(mimirCheck){
+                isLoading = 1
+                toggleLoading()
+                if(last === 6){
+                    mimir(roomsObjects, objectsByDateMap, true)
+                }else
+                    mimir(roomsObjects, objectsByDateMap, false)
             }
 
 
@@ -282,17 +318,32 @@ csvForm.addEventListener("submit", function (e) {
             alert("Error reading " + error)
         });
 
-});
-
+}
+csvForm.addEventListener("submit", handleCsvFormSubmission)
 
 /**
- * Reads a CSV file and creates objects based on its content.
+ * Asynchronously creates objects from a CSV file using specified configurations. Utilizes Web Workers for parallel processing.
  *
+ * @function
  * @param {File} csvFile - The CSV file to be processed.
- * @param {boolean} debug - Flag to enable debugging output.
- * @returns {Promise<Array<Object>>} A promise that resolves with an array of objects.
+ * @param {Object} colMap - An object mapping column indices to custom names.
+ * @param {string} separatorInput - The separator used in the CSV file.
+ * @param {string} timeFormat - The format of time values in the CSV.
+ * @param {string} dayFormat - The format of day values in the CSV.
+ * @param {Array<number>} timeCols - Array of indices representing time columns.
+ * @param {Array<number>} dateCols - Array of indices representing date columns.
+ * @param {boolean} debug - A flag indicating whether to enable debug mode.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of objects created from the CSV data.
+ *
+ * @description
+ * This function utilizes Web Workers to enable parallel processing of the CSV data for improved performance.
+ * Each worker is assigned a distinct chunk of data, and the processed results are communicated back to the
+ * main thread. The worker script is specified as 'algorithms_workers/readerWorker.js'. The function returns
+ * a Promise that resolves to an array of objects created from the CSV data after all workers have completed
+ * their tasks.
+ *
  */
-function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, timeCols, dateCols, debug) {
+function createObjects(csvFile, colMap, separatorInput, timeFormat, dayFormat, timeCols, dateCols, debug) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -317,15 +368,12 @@ function create_objects(csvFile, colMap, separatorInput, timeFormat, dayFormat, 
                 chunks.push(chunk);
             }
 
-            const workers = [];
             let workersCount = 0
             const objects = []
 
             chunks.forEach((chunk, index) => {
-                const worker = new Worker('algorithms_workers/readerWorker.js'); // Specify the path to your worker script
+                const worker = new Worker('algorithms_workers/readerWorker.js');
                 workersCount++
-                workers.push(worker);
-
 
                 worker.onmessage = function (event) {
                     workersCount--
@@ -379,7 +427,6 @@ function findConflictingClasses(classes, debug) {
             conflictChain.push(classA);
             for (let j = i + 1; j < classes.length; j++) {
                 const classB = classes[j];
-                // Check for time overlap
                 if (isTimeOverlap(classA, classB)) {
                     debug && console.log("Class A: ", classA, " Class B: ", classB);
                     conflictChain.push(classB);
@@ -396,7 +443,6 @@ function findConflictingClasses(classes, debug) {
                         const classB = classes[j];
                         debug && console.log("Class B: ", classB);
                         if (!conflictChain.includes(classB)) {
-                            // Check for time overlap
                             if (isTimeOverlap(classK, classB)) {
                                 debug && console.log("Class A chain: ", classK, " Class B chain: ", classB);
                                 conflictChain.push(classB);
@@ -441,23 +487,35 @@ function findConflictingClasses(classes, debug) {
 }
 
 /**
- * Prints a table of objects to a specified result container.
+ * Displays a table of objects in the HTML document with optional title, score information, and download functionality.
  *
- * @param {Array<Object>} objObjects - Array of objects to be displayed.
- * @param {HTMLElement} resultContainer - HTML element to display the table.
+ * @function
+ * @param {Array<Object>} objObjects - An array of objects to be displayed in the table.
+ * @param {string} title - The title to be displayed above the table.
+ * @param {Object} score - Optional score information to be displayed alongside the table.
+ * @param {boolean} last - A flag indicating if this is the last table to be displayed, used for loading state management.
+ * @returns {void}
+ *
+ * @description
+ * This function dynamically creates an HTML table from an array of objects and displays it in the document.
+ * It can include a title, score information, and a download button. The table is appended to the 'display-area'
+ * HTML element. If no objects are provided, a message indicating that there is nothing to display is shown.
+ * If the score parameter is provided, the function calculates additional scores based on specified criteria, if there are any,
+ * using a Web Worker ('algorithms_workers/CriteriaWorker.js') and displays them alongside the table.
+ * A download button is also included to download the displayed data as a CSV file. If the last parameter is true,
+ * it indicates that this is the last table to be displayed, and the loading state is toggled off.
+ *
  */
 function printObjectsTable(objObjects, title, score, last) {
 
     const resultContainer = document.createElement('div')
     resultContainer.classList.add("box")
-    // Check if there are rooms to display
     if (objObjects.length === 0) {
         resultContainer.innerHTML = '<p>Nothing to display <i class="fa-solid fa-face-sad-tear" style="color: white"></i></p>';
         document.getElementById('display-area').appendChild(resultContainer)
         return;
     }
 
-    // Collect all unique keys (columns) from all objects
     const allKeys = objObjects.reduce((keys, obj) => {
         Object.keys(obj).forEach(key => {
             if (!keys.includes(key)) {
@@ -474,7 +532,6 @@ function printObjectsTable(objObjects, title, score, last) {
     titleEl.classList.add('title')
     titleEl.textContent = title
 
-    // Create the table element
     const table = document.createElement('table');
     const tableDiv = document.createElement("div")
     tableDiv.classList.add('table-container');
@@ -505,7 +562,6 @@ function printObjectsTable(objObjects, title, score, last) {
     }
 
 
-    // Create the table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
 
@@ -518,7 +574,6 @@ function printObjectsTable(objObjects, title, score, last) {
     thead.appendChild(headerRow);
     table.appendChild(thead);
     tableDiv.appendChild(table)
-    // Create the table body
     const tbody = document.createElement('tbody');
 
     let itTemp = 0
@@ -527,7 +582,7 @@ function printObjectsTable(objObjects, title, score, last) {
             const row = document.createElement('tr');
             allKeys.forEach(key => {
                 const cell = document.createElement('td');
-                cell.textContent = obj[key] || ''; // Handle cases where a key is not present in an object
+                cell.textContent = obj[key] || '';
                 row.appendChild(cell);
             });
             tbody.appendChild(row);
@@ -536,8 +591,7 @@ function printObjectsTable(objObjects, title, score, last) {
     });
     table.appendChild(tbody);
 
-    // Append the table to the result container
-    resultContainer.innerHTML = ''; // Clear existing content
+    resultContainer.innerHTML = '';
     const headerDiv = document.createElement('div')
     headerDiv.classList.add("header-container")
 
@@ -563,8 +617,10 @@ function printObjectsTable(objObjects, title, score, last) {
     rightSide.classList.add("right-side")
 
     headerDiv.append(rightSide)
+
+    const workerPromises = [];
+
     if (score) {
-        console.log("Score: ", score)
         const score_to_use = {
             "cOverCap": [Math.round(100 - ((score["nrOverCap"] / classesTotal) * 100))],
             "sOverCap": score["nrStuOverCap"],
@@ -574,6 +630,7 @@ function printObjectsTable(objObjects, title, score, last) {
             "cCaracNotFulfilled": score["caracNotFulfilled"],
             "rCapWasted": score["capWasted"]
         }
+
         console.log("Score to use: ", score_to_use)
         const scores = document.createElement("div")
         scores.classList.add("scores")
@@ -581,188 +638,289 @@ function printObjectsTable(objObjects, title, score, last) {
         const circles = document.createElement("div")
         circles.classList.add("circles")
 
-
-        for (let property in score_to_use) {
-
-            if (Array.isArray(score_to_use[property])) {
-                console.log("B", property)
-                const circleRing = document.createElement('div')
-                circleRing.classList.add("circle-ring")
-                const backgroundCircle = document.createElement('div')
-                backgroundCircle.classList.add("circle-bg")
-                const circleDisplay = document.createElement('div')
-                circleDisplay.classList.add("circle-display")
-                const percentageNumber = document.createElement("h1")
-                percentageNumber.classList.add("circle-score-text")
-                percentageNumber.textContent = score_to_use[property]
+        if (criteriasToUse.length > 0) {
 
 
-                circleDisplay.appendChild(percentageNumber)
-                backgroundCircle.appendChild(circleDisplay)
-                circleRing.appendChild(backgroundCircle)
+            criteriasToUse.forEach(criteria => {
+                const worker = new Worker('algorithms_workers/CriteriaWorker.js');
 
-                if (score_to_use[property] <= 2)
-                    score_to_use[property] = 2
-                if (score_to_use[property] < 25)
-                    circleRing.style.background = `conic-gradient(var(--score-0-25) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 25 && score_to_use[property] < 50)
-                    circleRing.style.background = `conic-gradient(var(--score-25-50) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 50 && score_to_use[property] < 75)
-                    circleRing.style.background = `conic-gradient(var(--score-50-75) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
-                if (score_to_use[property] >= 75)
-                    circleRing.style.background = `conic-gradient(var(--score-75-100) 0% ${score_to_use[property]}%,var(--score-left-color)  0% 100%)`
+                const promise = new Promise((resolve, reject) => {
+                    worker.onmessage = function (e) {
+                        resolve({criteria, result: e.data});
+                        worker.terminate();
+                    };
 
-                circles.appendChild(circleRing)
-            }
+                    worker.onerror = function (error) {
+                        reject(error);
+                        worker.terminate();
+                    };
+
+                    worker.postMessage({objObjects, criteria, classesTotal});
+                });
+
+                workerPromises.push(promise);
+            });
+
 
         }
 
-        const moreinfoBtn = document.createElement("button")
-        moreinfoBtn.classList.add("more-info-btn")
+        Promise.all(workerPromises)
+            .then(results => {
+                const criteriaScoreMap = {};
+                results.forEach(({criteria, result}) => {
+                    criteriaScoreMap[criteria] = result;
+                });
 
-        const moreInfoDiv = document.createElement("div")
-        moreInfoDiv.classList.add("more-info")
-
-        const infoIcon = document.createElement("i")
-        infoIcon.classList.add("fa-solid", "fa-circle-info")
-
-        moreinfoBtn.appendChild(infoIcon)
-
-        moreInfoDiv.style.display = 'none'
-        const linesOfText = [
-            [`Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`],
-            [`Number of students in overcrowding: ${score_to_use["sOverCap"]}`],
-            [`Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`],
-            [`Number of features wasted: ${score_to_use["rCaracWasted"]}`],
-            [`Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`],
-            [`Number of features wasted: ${score_to_use["cCaracNotFulfilled"]}`],
-            [`Capacity wasted with matches: ${score_to_use["rCapWasted"]}`]
-        ];
-
-        linesOfText.forEach(line => {
-            const spanElement = document.createElement('span');
-
-            if (Array.isArray(line)) {
-                let changed = 0;
-                if (line[0] === `Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`) {
-
-                    if (score_to_use["cOverCap"] < 25)
-                        spanElement.style.color = "var(--score-0-25)"
-                    if (score_to_use["cOverCap"] >= 25 && score_to_use["cOverCap"] < 50)
-                        spanElement.style.color = "var(--score-25-50)"
-                    if (score_to_use["cOverCap"] >= 50 && score_to_use["cOverCap"] < 75)
-                        spanElement.style.color = "var(--score-50-75)"
-                    if (score_to_use["cOverCap"] >= 75)
-                        spanElement.style.color = "var(--score-75-100)"
-                    spanElement.textContent = line[0] + " (First Score Circle) ";
-                    spanElement.style.fontWeight = 'bold'
-                    changed = 1
+                for (const criteriaScore in criteriaScoreMap) {
+                    score_to_use[criteriaScore] = criteriaScoreMap[criteriaScore]
                 }
 
-                if (line[0] === `Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`) {
-                    if (score_to_use["cWithCar"] < 25)
-                        spanElement.style.color = "var(--score-0-25)"
-                    if (score_to_use["cWithCar"] >= 25 && score_to_use["cWithCar"] < 50)
-                        spanElement.style.color = "var(--score-25-50)"
-                    if (score_to_use["cWithCar"] >= 50 && score_to_use["cWithCar"] < 75)
-                        spanElement.style.color = "var(--score-50-75)"
-                    if (score_to_use["cWithCar"] >= 75)
-                        spanElement.style.color = "var(--score-75-100)"
-                    spanElement.textContent = line[0] + " (Second Score Circle) ";
-                    spanElement.style.fontWeight = 'bold'
-                    changed = 1
+                let numCircle = 0
+                const linesOfText = [
+                    `Classes with equal or higher capacity delivered: ${classesTotal - score["nrOverCap"]}/${classesTotal}`,
+                    `Number of students in overcrowding: ${score_to_use["sOverCap"]}`,
+                    `Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`,
+                    `Number of features wasted: ${score_to_use["rCaracWasted"]}`,
+                    `Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`,
+                    `Number of features wasted: ${score_to_use["cCaracNotFulfilled"]}`,
+                    `Capacity wasted with matches: ${score_to_use["rCapWasted"]}`
+                ];
+
+                const moreinfoBtn = document.createElement("button")
+                moreinfoBtn.classList.add("more-info-btn")
+                const moreInfoDiv = document.createElement("div")
+                moreInfoDiv.classList.add("more-info")
+
+                const infoIcon = document.createElement("i")
+                infoIcon.classList.add("fa-solid", "fa-circle-info")
+
+                moreinfoBtn.appendChild(infoIcon)
+
+                moreInfoDiv.style.display = 'none'
+
+                for (let property in score_to_use) {
+
+                    const spanElement = document.createElement('span');
+                    spanElement.style.color = "var(--score-default)"
+
+                    switch (property) {
+                        case "cOverCap" :
+                            console.log("hello")
+                            numCircle++
+                            spanElement.textContent = linesOfText[0] + ` (${numCircle}º Circle) `;
+                            break;
+                        case "cWithCar" :
+                            numCircle++
+                            spanElement.textContent = linesOfText[2] + ` (${numCircle}º Circle) `;
+                            break;
+                        case "sOverCap" :
+                            spanElement.textContent = linesOfText[1];
+                            break;
+                        case "rCaracWasted" :
+                            spanElement.textContent = linesOfText[3];
+                            break;
+                        case "cCaracNotFulfilled" :
+                            spanElement.textContent = linesOfText[5];
+                            break;
+                        case "rCapWasted" :
+                            spanElement.textContent = linesOfText[6];
+                            break;
+                        case "cWithRoom" :
+                            numCircle++
+                            spanElement.textContent = linesOfText[4] + ` (${numCircle}º Circle) `;
+                            break;
+                        default :
+                            if (score_to_use[property]["inequality"] === true) {
+                                numCircle++
+                                spanElement.textContent = `${property}: ${Math.round((score_to_use[property]["criteriaScore"] / 100) * classesTotal)}/${classesTotal}  (${numCircle}º Circle) `;
+                            } else {
+                                spanElement.textContent = `${property}: ${score_to_use[property]["criteriaScore"]}`;
+                            }
+
+                            break;
+
+                    }
+
+
+                    if (Array.isArray(score_to_use[property]) || score_to_use[property]["inequality"] === true) {
+                        const circleRing = document.createElement('div')
+                        circleRing.classList.add("circle-ring")
+                        const backgroundCircle = document.createElement('div')
+                        backgroundCircle.classList.add("circle-bg")
+                        const circleDisplay = document.createElement('div')
+                        circleDisplay.classList.add("circle-display")
+                        const percentageNumber = document.createElement("h1")
+                        percentageNumber.classList.add("circle-score-text")
+
+                        if (!Array.isArray(score_to_use[property])) {
+                            percentageNumber.textContent = Math.round(Number(score_to_use[property]["criteriaScore"]))
+
+                        } else {
+                            percentageNumber.textContent = score_to_use[property]
+                        }
+
+
+                        circleDisplay.appendChild(percentageNumber)
+                        backgroundCircle.appendChild(circleDisplay)
+                        circleRing.appendChild(backgroundCircle)
+
+                        let scoretemp = Number(percentageNumber.textContent)
+
+                        switch (true) {
+                            case scoretemp < 25:
+                                if (scoretemp <= 2)
+                                    scoretemp = 2;
+                                circleRing.style.background = `conic-gradient(var(--score-0-25) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                                spanElement.style.color = "var(--score-0-25)"
+                                break;
+                            case scoretemp < 50:
+                                circleRing.style.background = `conic-gradient(var(--score-25-50) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                                spanElement.style.color = "var(--score-25-50)"
+                                break;
+                            case scoretemp < 75:
+                                circleRing.style.background = `conic-gradient(var(--score-50-75) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                                spanElement.style.color = "var(--score-50-75)"
+                                break;
+                            case scoretemp >= 75:
+                                circleRing.style.background = `conic-gradient(var(--score-75-100) 0% ${scoretemp}%,var(--score-left-color)  0% 100%)`;
+                                spanElement.style.color = "var(--score-75-100)"
+                                break;
+                            default:
+                                break;
+                        }
+                        circles.appendChild(circleRing)
+                    }
+
+                    moreInfoDiv.appendChild(spanElement);
                 }
 
-                if (line[0] === `Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`) {
-                    if (score_to_use["cWithRoom"] < 25)
-                        spanElement.style.color = "var(--score-0-25)"
-                    if (score_to_use["cWithRoom"] >= 25 && score_to_use["cWithRoom"] < 50)
-                        spanElement.style.color = "var(--score-25-50)"
-                    if (score_to_use["cWithRoom"] >= 50 && score_to_use["cWithRoom"] < 75)
-                        spanElement.style.color = "var(--score-50-75)"
-                    if (score_to_use["cWithRoom"] >= 75)
-                        spanElement.style.color = "var(--score-75-100)"
-                    spanElement.textContent = line[0] + " (Third Score Circle) ";
-                    spanElement.style.fontWeight = 'bold'
-                    changed = 1
+
+                moreinfoBtn.addEventListener('click', function () {
+                    if (moreInfoDiv.style.display === 'none') {
+                        moreInfoDiv.style.display = 'flex';
+                    } else {
+                        moreInfoDiv.style.display = 'none';
+                    }
+                });
+
+                scores.appendChild(circles)
+                scores.appendChild(moreinfoBtn)
+
+                headingsDiv.appendChild(moreInfoDiv)
+
+                rightSide.appendChild(scores)
+                rightSide.appendChild(downloadBtn)
+
+
+                headingsDiv.appendChild(headerDiv)
+                resultContainer.append(headingsDiv)
+                resultContainer.appendChild(tableDiv);
+                resultContainer.style.display = 'flex';
+                document.getElementById("display-area").appendChild(resultContainer);
+
+                if (last) {
+                    isLoading = 0
+                    toggleLoading()
                 }
-
-                if (changed === 0) {
-                    spanElement.textContent = line[0];
-                    spanElement.style.color = 'white';
-                }
-
-            }
-
-            moreInfoDiv.appendChild(spanElement);
-            //moreInfoDiv.appendChild(document.createElement('br')); // Add line break between spans
-        });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
 
 
-        moreinfoBtn.addEventListener('click', function () {
-            if (moreInfoDiv.style.display === 'none') {
-                moreInfoDiv.style.display = 'flex';
-            } else {
-                moreInfoDiv.style.display = 'none';
-            }
-        });
+    }else {
 
-        scores.appendChild(circles)
-        scores.appendChild(moreinfoBtn)
-
-        headingsDiv.appendChild(moreInfoDiv)
-
-        rightSide.appendChild(scores)
-    }
-    rightSide.appendChild(downloadBtn)
+        rightSide.appendChild(downloadBtn)
 
 
-    headingsDiv.appendChild(headerDiv)
-    resultContainer.append(headingsDiv)
-    resultContainer.appendChild(tableDiv);
-    resultContainer.style.display = 'flex';
-    document.getElementById("display-area").appendChild(resultContainer);
+        headingsDiv.appendChild(headerDiv)
+        resultContainer.append(headingsDiv)
+        resultContainer.appendChild(tableDiv);
+        resultContainer.style.display = 'flex';
+        document.getElementById("display-area").appendChild(resultContainer);
 
-    if (last){
-        console.log("HEY????????")
-        isLoading = 0
-        toggleLoading()
-    }
-    function downloadCSV(objObjects, title) {
-        const csvContent = convertArrayToCSV(objObjects, separatorInput);
-        console.log(csvContent)
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', title || 'data.csv');
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
-    }
-
-    function convertArrayToCSV(data, separator) {
-        // Check if the input is not an empty array
-        if (!Array.isArray(data) || data.length === 0) {
-            console.error('Input is not a valid array of objects.');
-            return '';
+        if (last) {
+            isLoading = 0
+            toggleLoading()
         }
-
-        // Extract headers from the first object
-        const headers = Object.keys(data[0]);
-
-        // Create CSV content
-        return [
-            headers.join(separator), // CSV header
-            ...data.map(obj => headers.map(header => obj[header]).join(separator)) // Data rows
-        ].join('\n');
     }
 }
 
-function displayCalendar(events, i, container){
+/**
+ * Downloads the data from an array of objects as a CSV file.
+ *
+ * @function
+ * @param {Array<Object>} objObjects - An array of objects containing the data to be downloaded.
+ * @param {string} title - The title to be used for the downloaded CSV file (optional).
+ * @returns {void}
+ *
+ * @description
+ * This function converts an array of objects into a CSV-formatted string using the specified separator
+ * (assumed to be a global variable named `separatorInput`). It then creates a Blob (Binary Large Object) from
+ * the CSV content and generates a download link for the user. The link is appended to the document body,
+ * programmatically clicked, and then removed from the document.
+ *
+ */
+function downloadCSV(objObjects, title) {
+    const csvContent = convertArrayToCSV(objObjects, separatorInput);
+    const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', title || 'data.csv');
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+}
+
+/**
+ * Converts an array of objects into a CSV-formatted string using the specified separator.
+ *
+ * @function
+ * @param {Array<Object>} data - An array of objects containing the data to be converted to CSV.
+ * @param {string} separator - The separator to be used in the CSV-formatted string.
+ * @returns {string} - A CSV-formatted string.
+ *
+ * @description
+ * This function takes an array of objects and a separator as input. It extracts headers from the first
+ * object in the array and creates a CSV-formatted string with the object data. The headers are used as the
+ * first line of the CSV, and each subsequent line represents an object's values separated by the specified
+ * separator. The resulting CSV-formatted string is returned.
+ */
+function convertArrayToCSV(data, separator) {
+    if (!Array.isArray(data) || data.length === 0) {
+        console.error('Input is not a valid array of objects.');
+        return '';
+    }
+
+    const headers = Object.keys(data[0]);
+
+    return [
+        headers.join(separator),
+        ...data.map(obj => headers.map(header => obj[header]).join(separator))
+    ].join('\n');
+}
+
+/**
+ * Displays a calendar with events in the HTML document using the FullCalendar library.
+ *
+ * @function
+ * @param {Array<Object>} events - An array of events to be displayed on the calendar.
+ * @param {number} i - An index identifier for the calendar (used in HTML element IDs).
+ * @param {HTMLElement} container - The HTML container element where the calendar will be appended.
+ * @returns {void}
+ *
+ * @description
+ * This function takes an array of events, an index identifier, and an HTML container element as input.
+ * It uses the FullCalendar library to display a calendar in the specified container. The events are converted
+ * into the format expected by FullCalendar, including title, subtitle, start time, and end time. If no events
+ * are provided, a message indicating that there is nothing to display is shown. The calendar is rendered in
+ * the month view by default, with additional options such as agenda views, week views, day views, and list views.
+ */
+function displayCalendar(events, i, container) {
     const calendarContainerDiv = document.createElement('div')
     calendarContainerDiv.id = `calendarDiv${i}`
     calendarContainerDiv.classList.add('box')
@@ -772,13 +930,13 @@ function displayCalendar(events, i, container){
         document.getElementById('display-area').appendChild(calendarContainerDiv)
         return;
     }
-    var convertedEvents = events.map(function(event) {
+    var convertedEvents = events.map(function (event) {
 
         var startDateTime = moment(event.Dia + ' ' + event.Início, 'DD/MM/YYYY HH:mm:ss');
         var endDateTime = moment(event.Dia + ' ' + event.Fim, 'DD/MM/YYYY HH:mm:ss');
 
         let subTitle = "No Room Allocated!"
-        if(event["Sala da aula"])
+        if (event["Sala da aula"])
             subTitle = event["Sala da aula"]
 
         return {
@@ -792,7 +950,7 @@ function displayCalendar(events, i, container){
 
     const calendarName = `calendar${i}`
 
-    calendarContainerDiv.id=`calendar-container${i}`
+    calendarContainerDiv.id = `calendar-container${i}`
     calendarContainerDiv.classList.add("calendar-display")
     const calendarDiv = document.createElement('div')
     calendarDiv.id = calendarName
@@ -800,35 +958,24 @@ function displayCalendar(events, i, container){
     calendarContainerDiv.style.display = 'flex';
     container.appendChild(calendarContainerDiv)
 
-    $('#'+calendarName).fullCalendar({
+    $('#' + calendarName).fullCalendar({
         header: {
             left: 'prev,next today',
             center: 'title',
             right: 'month,agendaWeek,agendaDay,listWeek,year'
         },
-        defaultView: 'month', // Set the default view to month
-        events: convertedEvents, // Pass your converted events here
-        locale: 'pt', // Set the locale to Portuguese
+        defaultView: 'month',
+        events: convertedEvents,
+        locale: 'pt',
         timeFormat: 'HH:mm',
-        buttonText: {
-            today: 'Hoje',
-            month: 'Mês',
-            week: 'Semana',
-            day: 'Dia',
-            list: 'Lista',
-            year: 'Ano' // Added translation for 'year'
-        },
         eventRender: function (event, element) {
-            // Add subtitle to event element
             if (event.subtitle) {
                 element.append('<div class="fc-subtitle">' + event.subtitle + '</div>');
             }
         }
-        // Additional options can be added here
     });
 
 }
-
 
 /**
  * Compares two objects based on their date and time properties.
@@ -838,9 +985,6 @@ function displayCalendar(events, i, container){
  * @param {boolean} debug - Flag to enable debugging output.
  * @returns {number} Returns a negative value if 'a' comes before 'b', a positive value if 'a' comes after 'b', and 0 if they are equal.
  *
- * @example
- * const result = compareObjectsByDateAndTime(object1, object2);
- * // result will be a number indicating the comparison result.
  */
 function compareObjectsByDateAndTime(a, b, debug) {
     // Compare dates
@@ -863,7 +1007,18 @@ function compareObjectsByDateAndTime(a, b, debug) {
     return dateComparison;
 }
 
-// Function to start or stop the loading circle based on the value of isLoading
+/**
+ * Toggles the visibility of a loading indicator on the HTML document.
+ *
+ * @function
+ * @returns {void}
+ *
+ * @description
+ * This function toggles the visibility of a loading indicator in the HTML document. The loading indicator is
+ * identified by the element with the ID 'loadingCircle'. If the global variable `isLoading` is truthy, the
+ * loading indicator is displayed by setting its CSS 'display' property to 'block'. Otherwise, if `isLoading` is
+ * falsy, the loading indicator is hidden by setting its 'display' property to 'none'.
+ */
 function toggleLoading() {
     const loadingCircle = document.getElementById('loadingCircle');
     if (isLoading) {
