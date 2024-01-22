@@ -80,6 +80,8 @@ function loadConfigurations() {
         document.getElementById('check1').checked = configurations.check1;
         document.getElementById('check2').checked = configurations.check2;
         document.getElementById('check3').checked = configurations.check3;
+        document.getElementById('check5').checked = configurations.check5;
+        document.getElementById('check6').checked = configurations.check6;
         document.getElementById('timeFormatSelector').value = configurations.timeFormat;
         document.getElementById('dayFormatSelector').value = configurations.dayFormat;
         document.getElementById('separatorInput').value = configurations.separatorInput;
@@ -147,6 +149,8 @@ function handleCsvFormSubmission(e) {
     var linguiniCheck = document.getElementById('check4').checked;
     var kowalskiCheck = document.getElementById('check5').checked
     var featureSelected = "a"
+    var mimirCheck = document.getElementById('check6').checked
+
 
     if(linguiniCheck) {
         var mainCapValue = document.getElementById('numberInput').value
@@ -252,6 +256,8 @@ function handleCsvFormSubmission(e) {
                 last = 4
             if (kowalskiCheck)
                 last = 5
+            if (mimirCheck)
+                last = 6
 
             if (greedyCheck) {
                 isLoading = 1
@@ -295,6 +301,14 @@ function handleCsvFormSubmission(e) {
                 }
                 else
                     kowalski(roomsObjects, objectsByDateMap, false, false)
+            }
+            if(mimirCheck){
+                isLoading = 1
+                toggleLoading()
+                if(last === 6){
+                    mimir(roomsObjects, objectsByDateMap, true)
+                }else
+                    mimir(roomsObjects, objectsByDateMap, false)
             }
 
 
@@ -493,7 +507,6 @@ function findConflictingClasses(classes, debug) {
  *
  */
 function printObjectsTable(objObjects, title, score, last) {
-
 
     const resultContainer = document.createElement('div')
     resultContainer.classList.add("box")

@@ -238,6 +238,8 @@ function saveConfigurations() {
         check2: document.getElementById('check2').checked,
         check3: document.getElementById('check3').checked,
         check4: document.getElementById('check4').checked,
+        check5: document.getElementById('check5').checked,
+        check6: document.getElementById('check6').checked,
 
         timeFormat: document.getElementById('timeFormatSelector').value,
         dayFormat: document.getElementById('dayFormatSelector').value,

@@ -205,7 +205,6 @@ function getFeaturesScarcity(rooms, debug){
     for (const scarcityMapElement in scarcityMap) {
         scarcityMap[scarcityMapElement] = 1 - scarcityMap[scarcityMapElement]/totalRooms
     }
-    debug && console.log(scarcityMap)
     return  scarcityMap
 }
 
