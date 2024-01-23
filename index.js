@@ -682,7 +682,7 @@ function printObjectsTable(objObjects, title, score, last) {
                     `Matches with asked features delivered: ${classesTotal - score["withouthCarac"]}/${classesTotal}`,
                     `Number of features wasted: ${score_to_use["rCaracWasted"]}`,
                     `Classes with a room assigned: ${classesTotal - score["withouthRoom"]}/${classesTotal}`,
-                    `Number of features wasted: ${score_to_use["cCaracNotFulfilled"]}`,
+                    `Number of features asked not fulfilled: ${score_to_use["cCaracNotFulfilled"]}`,
                     `Capacity wasted with matches: ${score_to_use["rCapWasted"]}`
                 ];
 
