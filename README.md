@@ -44,13 +44,22 @@ ${\color{green}2}$ \- The classes and their scheduled hours, with no rooms assig
 ${\color{red}1}$ \- You can upload your JSON configuration file here. All your settings will be saved to a JSON that can be downloaded later\
 ${\color{green}2}$ \- Adjust the column settings based on the columns names of your input files
 
-### Adjust some final settings and submit:
+### Add your own quality criteria!
 
 ![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step3.png)
+${\color{red}1}$ \- In here you can write your own quality criteria. If not a valid criteria then the page will alert you of that.\
+${\color{green}2}$ \- In this log appears all the criterias you have defined and that will be used in the scoring system!\
+${\color{purple}3}$ \- You can click on this trash can icon to eliminate a criteria!
 
-${\color{red}1}$ \- Choose which algorithms to use: Aldrich (Greedy), Dexter (Greedy, overcapacity permitted), Ratatouille (weight based) or Linguini (weight based with customizable weights)\
-${\color{green}2}$ \- Some final settings based on the content of the input\
-${\color{purple}3}$ \- Submit and get results!
+
+### Adjust some final settings and submit:
+
+![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step4.png)
+
+${\color{red}1}$ \- Choose which algorithms to use: Aldrich (Greedy), Dexter (Greedy, overcapacity permitted), Ratatouille (weight based), Linguini (weight based with customizable weights), Kowalski (non weighed function), Mimir (Linear Programming)\
+${\color{green}2}$ \- If linguini is checked then this box has to be filled!\
+${\color{purple}3}$ \- Choose the configurations used in the csv files provided!\
+${\color{orange}4}$ \- Submit the files and see the results!
 
 ### Results and configuration files
 
