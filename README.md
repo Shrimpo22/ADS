@@ -21,7 +21,7 @@ These are the features available to users when using this application:
 - Downloadable CSV file(s) of the resulting schedule(s)
 - Preview of the CSV files
 - Selection of CSV columns used
-- Five different scheduling algorithms
+- Six different scheduling algorithms
 - Selection of CSV separator, time format and date format
 - Quality criteria for each produced schedule, such as: capacity wasted, number of features wasted, etc.
 - Configuration through a JSON file, that can be both downloaded and uploaded
