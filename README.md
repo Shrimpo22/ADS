@@ -66,7 +66,7 @@ For each algorithm chosen, it will display it's results on a panel like this:
 
 ![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step5.png)
 
-${\color{red}1}$ \- The name of the algorithm will appear here!\
+${\color{red}1}$ \- The name of the algorithm will appear here alongside an icon to switch to the calendar view!\
 ${\color{green}2}$ \- A small preview, with number of lines showing according to the ones defined earlier, will appear here! \
 ${\color{purple}3}$ \- In this side you can see some score circles with numbers inside corresponding to the percentage of the matches adhering to the criterion used for that circle! There's also the ability do download a csv file with the results!\
 ${\color{orange}4}$ \- In this more info icon you can see more details of the scores used!
