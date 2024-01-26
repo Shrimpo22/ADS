@@ -49,7 +49,7 @@ ${\color{green}2}$ \- Adjust the column settings based on the columns names of y
 ![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step3.png)
 ${\color{red}1}$ \- In here you can write your own quality criteria. If not a valid criteria then the page will alert you of that.\
 ${\color{green}2}$ \- In this log appears all the criterias you have defined and that will be used in the scoring system!\
-${\color{purple}3}$ \- You can click on this trash can icon to eliminate a criteria!
+${\color{purple}3}$ \- You can click on this trash can icon to eliminate a criterion!
 
 
 ### Adjust some final settings and submit:
@@ -62,5 +62,17 @@ ${\color{purple}3}$ \- Choose the configurations used in the csv files provided!
 ${\color{orange}4}$ \- Submit the files and see the results!
 
 ### Results and configuration files
+For each algorithm chosen, it will display it's results on a panel like this:
+
+![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step5.png)
+
+${\color{red}1}$ \- The name of the algorithm will appear here!\
+${\color{green}2}$ \- A small preview, with number of lines showing according to the ones defined earlier, will appear here! \
+${\color{purple}3}$ \- In this side you can see some score circles with numbers inside corresponding to the percentage of the matches adhering to the criterion used for that circle! There's also the ability do download a csv file with the results!\
+${\color{orange}4}$ \- In this more info icon you can see more details of the scores used!
+
+![alt text](https://github.com/moonzn/university-software-architecture-project/blob/master/resources/step6.png)
+In this container appears all the default and user defined criteria and the ones that correspond to a score circle have the color matched with it and at the end say which circle corresponds.
+
 
 After it's done processing you can analyse the results based on the metrics provided and download the CSV files generated.
